@@ -38,6 +38,7 @@ Run
 git clone https://github.com/AutoHyper/autohyper
 cd autohyper
 git submodule init
+git submodule update
 ```
 
 to clone the latest version of AutoHyper.
