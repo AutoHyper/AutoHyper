@@ -45,13 +45,14 @@ let private run (args: array<string>) =
             | Result.Error e ->
                    raise <| AnalysisException $"%s{e}"
                    
-    // By convention the paths.conf file is located in the same directory as the HyPA executable
+    // By convention the paths.json file is located in the same directory as the HyPA executable
     let configPath = 
-        System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "/paths.conf"
+        System.IO.Path.Join [|System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location); "paths.json"|]
+        
                    
     // Check if the path to the config file is valid , i.e., the file exists
     if System.IO.FileInfo(configPath).Exists |> not then 
-        raise <| AnalysisException "The paths.conf file does not exist in the same directory as the executable"            
+        raise <| AnalysisException "The paths.json file does not exist in the same directory as the executable"            
     
     // Parse the config File
     let configContent = 
@@ -59,7 +60,7 @@ let private run (args: array<string>) =
             File.ReadAllText configPath
         with 
             | _ -> 
-                raise <| AnalysisException "Could not open paths.conf file"
+                raise <| AnalysisException "Could not open paths.json file"
 
     let logger vb s = 
         if List.contains cmdArgs.Verbosity vb then 

@@ -22,7 +22,7 @@ open System
 open System.Collections.Generic
 
 /// If set to true, we raise exceptions
-let mutable DEBUG = true
+let DEBUG = false
 
 /// Given a number n, computes all lists of booleans of length n 
 let rec computeBooleanPowerSet n =
