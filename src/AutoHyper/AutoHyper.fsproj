@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <LangVersion>7.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Util.fs" />
+    <Compile Include="JSON.fs" />
+    <Compile Include="RunConfiguration.fs" />
+    <Compile Include="TransitionSystem.fs" />
+    <Compile Include="HyperLTL.fs" />
+    <Compile Include="ExplicitAutomaton.fs" />
+    <Compile Include="ProductConstruction.fs" />
+    <Compile Include="ModelChecking.fs" />
+    <Compile Include="CommandLineParser.fs" />
+    <Compile Include="NuSMV.fs" />
+    <Compile Include="BooleanPrograms.fs" />
+    <Compile Include="ModelCheckingEntryPoint.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FParsec" Version="1.1.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FsOmegaLib\FsOmegaLib.fsproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+  </PropertyGroup>
+</Project>

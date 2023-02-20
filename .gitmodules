@@ -1,0 +1,3 @@
+[submodule "src/FsOmegaLib"]
+	path = src/FsOmegaLib
+	url = https://github.com/ravenbeutner/FsOmegaLib
