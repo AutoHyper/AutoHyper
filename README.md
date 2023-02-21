@@ -48,9 +48,9 @@ to clone the latest version of AutoHyper.
 To build AutoHyper run the following (when in the main directory of this repository).
 
 ```shell
-cd src
-dotnet build -c "release" -o ../app
-cd ..
+cd src/AutoHyper
+dotnet build -c "release" -o ../../app
+cd ../..
 ```
 
 Afterward, the AutoHyper executable is located in the `app/` folder.
