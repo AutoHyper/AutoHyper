@@ -1,0 +1,34 @@
+forall A. exists B.
+(G
+    (
+        (*p1-TOKEN*_A <-> *p2-TOKEN*_B)
+        &
+        (*p2-TOKEN*_A <-> *p1-TOKEN*_B)
+        &
+        (*p1_line*_A = *p2_line*_B)
+        &
+        (*p2_line*_A = *p1_line*_B)
+        &
+        (*p1-TOKEN*_A <-> *p3-TOKEN*_B)
+        &
+        (*p3-TOKEN*_A <-> *p1-TOKEN*_B)
+        &
+        (*p1_line*_A = *p3_line*_B)
+        &
+        (*p3_line*_A = *p1_line*_B)
+        &
+        (*p2-TOKEN*_A <-> *p3-TOKEN*_B)
+        &
+        (*p3-TOKEN*_A <-> *p2-TOKEN*_B)
+        &
+        (*p2_line*_A = *p3_line*_B)
+        &
+        (*p3_line*_A = *p2_line*_B)
+        &
+        (
+            (!*p1-TOKEN*_A & !*p2-TOKEN*_A & !*p3-TOKEN*_A)
+            |
+            (*p1-TOKEN*_B | *p2-TOKEN*_B | *p3-TOKEN*_B)
+        )
+    )
+)

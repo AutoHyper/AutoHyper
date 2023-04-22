@@ -1,0 +1,12 @@
+exists A. forall B.
+    (F
+        (*GOAL*_A) 
+    )
+&
+    (G
+        (
+            (! *GOAL*_A)
+            ->
+            (! *GOAL*_B)
+        )
+    )

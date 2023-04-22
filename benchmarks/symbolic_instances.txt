@@ -1,0 +1,13 @@
+Bakery_3 \varphi_S1 ./symbolic/bakery/bakery_3procs.smv ./symbolic/bakery/bakery_formula_S1_3proc.hq
+Bakery_3 \varphi_S2 ./symbolic/bakery/bakery_3procs.smv ./symbolic/bakery/bakery_formula_S2_3proc.hq
+Bakery_3 \varphi_S3 ./symbolic/bakery/bakery_3procs.smv ./symbolic/bakery/bakery_formula_S3_3proc.hq
+Bakery_3 \varphi_sym_1 ./symbolic/bakery/bakery_3procs.smv ./symbolic/bakery/bakery_formula_sym1_3proc.hq
+Bakery_3 \varphi_sym_2 ./symbolic/bakery/bakery_3procs.smv ./symbolic/bakery/bakery_formula_sym2_3proc.hq 
+Bakery_5 \varphi_sym_1 ./symbolic/bakery/bakery_5procs.smv ./symbolic/bakery/bakery_formula_sym1_5proc.hq
+Bakery_5 \varphi_sym_2 ./symbolic/bakery/bakery_5procs.smv ./symbolic/bakery/bakery_formula_sym2_5proc.hq
+SNARK-bug1 \varphi_lin ./symbolic/snark/snark1_M1_concurrent.smv ./symbolic/snark/snark1_M2_sequential.smv ./symbolic/snark/snark1_formula.hq
+3-Thread_correct \varphi_NI ./symbolic/ni/NI_correct.smv ./symbolic/ni/NI_formula.hq
+3-Thread_incorrect \varphi_NI ./symbolic/ni/NI_incorrect.smv ./symbolic/ni/NI_formula.hq
+NRP_T_correct \varphi_fair ./symbolic/nrp/NRP_correct.smv ./symbolic/nrp/NRP_formula.hq
+NRP_T_incorrect \varphi_fair ./symbolic/nrp/NRP_incorrect.smv ./symbolic/nrp/NRP_formula.hq
+Mutant \varphi_mut ./symbolic/mutation/mutation_testing.smv ./symbolic/mutation/mutation_testing.hq

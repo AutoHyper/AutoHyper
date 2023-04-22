@@ -1,0 +1,198 @@
+
+ MODULE main
+ VAR
+    x_axis: 0..19;
+    y_axis: 0..19;
+
+    act: 1..4;
+ASSIGN
+    -- action: 1:up, 2:down, 3:left, 4:right
+    init(act):= 1;
+    next(act):=
+        case
+            -- init
+            (x_axis=0 & y_axis=0): {1,4};
+
+            (x_axis=0 & ((y_axis=5) | (y_axis=6) | (y_axis=7) | (y_axis=8) | (y_axis=9) | (y_axis=10) | (y_axis=11) | (y_axis=12) | (y_axis=13) | (y_axis=14) | (y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=1 & ((y_axis=6) | (y_axis=7) | (y_axis=8) | (y_axis=9) | (y_axis=10) | (y_axis=11) | (y_axis=12) | (y_axis=13) | (y_axis=14) | (y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=2 & ((y_axis=7) | (y_axis=8) | (y_axis=9) | (y_axis=10) | (y_axis=11) | (y_axis=12) | (y_axis=13) | (y_axis=14) | (y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=3 & ((y_axis=8) | (y_axis=9) | (y_axis=10) | (y_axis=11) | (y_axis=12) | (y_axis=13) | (y_axis=14) | (y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=4 & ((y_axis=9) | (y_axis=10) | (y_axis=11) | (y_axis=12) | (y_axis=13) | (y_axis=14) | (y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=5 & ((y_axis=10) | (y_axis=11) | (y_axis=12) | (y_axis=13) | (y_axis=14) | (y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=6 & ((y_axis=11) | (y_axis=12) | (y_axis=13) | (y_axis=14) | (y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=7 & ((y_axis=12) | (y_axis=13) | (y_axis=14) | (y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=8 & ((y_axis=13) | (y_axis=14) | (y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=9 & ((y_axis=14) | (y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=10 & ((y_axis=15) | (y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=11 & ((y_axis=16) | (y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=12 & ((y_axis=17) | (y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=13 & ((y_axis=18) | (y_axis=19)) ): act;
+            (x_axis=14 & ((y_axis=19)) ): act;
+
+            -----1
+            (x_axis=5 & ((y_axis=0)) ): act;
+            (x_axis=6 & ((y_axis=0) | (y_axis=1)) ): act;
+            (x_axis=7 & ((y_axis=0) | (y_axis=1) | (y_axis=2)) ): act;
+            (x_axis=8 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3)) ): act;
+            (x_axis=9 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4)) ): act;
+            (x_axis=10 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4) | (y_axis=5)) ): act;
+            (x_axis=11 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4) | (y_axis=5) | (y_axis=6)) ): act;
+            (x_axis=12 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4) | (y_axis=5) | (y_axis=6) | (y_axis=7)) ): act;
+            (x_axis=13 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4) | (y_axis=5) | (y_axis=6) | (y_axis=7) | (y_axis=8)) ): act;
+            (x_axis=14 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4) | (y_axis=5) | (y_axis=6) | (y_axis=7) | (y_axis=8) | (y_axis=9)) ): act;
+            (x_axis=15 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4) | (y_axis=5) | (y_axis=6) | (y_axis=7) | (y_axis=8) | (y_axis=9) | (y_axis=10)) ): act;
+            (x_axis=16 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4) | (y_axis=5) | (y_axis=6) | (y_axis=7) | (y_axis=8) | (y_axis=9) | (y_axis=10) | (y_axis=11)) ): act;
+            (x_axis=17 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4) | (y_axis=5) | (y_axis=6) | (y_axis=7) | (y_axis=8) | (y_axis=9) | (y_axis=10) | (y_axis=11) | (y_axis=12)) ): act;
+            (x_axis=18 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4) | (y_axis=5) | (y_axis=6) | (y_axis=7) | (y_axis=8) | (y_axis=9) | (y_axis=10) | (y_axis=11) | (y_axis=12) | (y_axis=13)) ): act;
+            (x_axis=19 & ((y_axis=0) | (y_axis=1) | (y_axis=2) | (y_axis=3) | (y_axis=4) | (y_axis=5) | (y_axis=6) | (y_axis=7) | (y_axis=8) | (y_axis=9) | (y_axis=10) | (y_axis=11) | (y_axis=12) | (y_axis=13) | (y_axis=14)) ): act;
+
+            -----2
+            (x_axis=0 & y_axis=3) :{2,4};
+            (x_axis=1 & y_axis=4) :{2,4};
+            (x_axis=2 & y_axis=5) :{2,4};
+            (x_axis=3 & y_axis=6) :{2,4};
+            (x_axis=4 & y_axis=7) :{2,4};
+            (x_axis=5 & y_axis=8) :{2,4};
+            (x_axis=6 & y_axis=9) :{2,4};
+            (x_axis=7 & y_axis=10) :{2,4};
+            (x_axis=8 & y_axis=11) :{2,4};
+            (x_axis=9 & y_axis=12) :{2,4};
+            (x_axis=10 & y_axis=13) :{2,4};
+            (x_axis=11 & y_axis=14) :{2,4};
+            (x_axis=12 & y_axis=15) :{2,4};
+            (x_axis=13 & y_axis=16) :{2,4};
+            (x_axis=14 & y_axis=17) :{2,4};
+            (x_axis=15 & y_axis=18) :{2,4};
+            (x_axis=16 & y_axis=19) :{2,4};
+
+            -----3
+            (x_axis=3 & y_axis=0) :{1,3};
+            (x_axis=4 & y_axis=1) :{1,3};
+            (x_axis=5 & y_axis=2) :{1,3};
+            (x_axis=6 & y_axis=3) :{1,3};
+            (x_axis=7 & y_axis=4) :{1,3};
+            (x_axis=8 & y_axis=5) :{1,3};
+            (x_axis=9 & y_axis=6) :{1,3};
+            (x_axis=10 & y_axis=7) :{1,3};
+            (x_axis=11 & y_axis=8) :{1,3};
+            (x_axis=12 & y_axis=9) :{1,3};
+            (x_axis=13 & y_axis=10) :{1,3};
+            (x_axis=14 & y_axis=11) :{1,3};
+            (x_axis=15 & y_axis=12) :{1,3};
+            (x_axis=16 & y_axis=13) :{1,3};
+            (x_axis=17 & y_axis=14) :{1,3};
+            (x_axis=18 & y_axis=15) :{1,3};
+            (x_axis=19 & y_axis=16) :{1,3};
+
+            -----4
+
+
+            --- the boundary of the whole environment
+            (x_axis=0): {1,4};
+            (x_axis=19): {2,3};
+            (y_axis=0): {1,4};
+            (y_axis=19): {2,3};
+
+            -- else, move to all four directions
+            TRUE: {1,2,3,4};
+        esac;
+
+    init(x_axis) := {0,1,2};
+    next(x_axis) :=
+        case
+            (act=1 | act=2):  x_axis;
+            (x_axis=0 & y_axis=0 & act=4) : {1};
+            (x_axis=0 & !(y_axis=0) & act=3) : {1};
+            (x_axis=0 & !(y_axis=0) & act=4) : {1};
+            (x_axis=1 & act=3) :  0 ;
+            (x_axis=1 & act=4) :  2 ;
+            (x_axis=2 & act=3) :  1 ;
+            (x_axis=2 & act=4) :  3 ;
+            (x_axis=3 & act=3) :  2 ;
+            (x_axis=3 & act=4) :  4 ;
+            (x_axis=4 & act=3) :  3 ;
+            (x_axis=4 & act=4) :  5 ;
+            (x_axis=5 & act=3) :  4 ;
+            (x_axis=5 & act=4) :  6 ;
+            (x_axis=6 & act=3) :  5 ;
+            (x_axis=6 & act=4) :  7 ;
+            (x_axis=7 & act=3) :  6 ;
+            (x_axis=7 & act=4) :  8 ;
+            (x_axis=8 & act=3) :  7 ;
+            (x_axis=8 & act=4) :  9 ;
+            (x_axis=9 & act=3) :  8 ;
+            (x_axis=9 & act=4) :  10 ;
+            (x_axis=10 & act=3) :  9 ;
+            (x_axis=10 & act=4) :  11 ;
+            (x_axis=11 & act=3) :  10 ;
+            (x_axis=11 & act=4) :  12 ;
+            (x_axis=12 & act=3) :  11 ;
+            (x_axis=12 & act=4) :  13 ;
+            (x_axis=13 & act=3) :  12 ;
+            (x_axis=13 & act=4) :  14 ;
+            (x_axis=14 & act=3) :  13 ;
+            (x_axis=14 & act=4) :  15 ;
+            (x_axis=15 & act=3) :  14 ;
+            (x_axis=15 & act=4) :  16 ;
+            (x_axis=16 & act=3) :  15 ;
+            (x_axis=16 & act=4) :  17 ;
+            (x_axis=17 & act=3) :  16 ;
+            (x_axis=17 & act=4) :  18 ;
+            (x_axis=18 & act=3) :  17 ;
+            (x_axis=18 & act=4) :  19 ;
+            (x_axis=19 & act=3) :  18 ;
+            TRUE: x_axis;
+        esac;
+
+
+    init(y_axis) := 0;
+    next(y_axis) :=
+        case
+            (act=3 | act=4): y_axis;
+            (y_axis=0 & x_axis=0 & act=1) : {1};
+
+            (y_axis=0 & !(x_axis=0) & act=1) : {1};
+            (y_axis=0 & !(x_axis=0) & act=2) : {1};
+            (y_axis=1 & act=2) :  0 ;
+            (y_axis=1 & act=1) :  2 ;
+            (y_axis=2 & act=2) :  1 ;
+            (y_axis=2 & act=1) :  3 ;
+            (y_axis=3 & act=2) :  2 ;
+            (y_axis=3 & act=1) :  4 ;
+            (y_axis=4 & act=2) :  3 ;
+            (y_axis=4 & act=1) :  5 ;
+            (y_axis=5 & act=2) :  4 ;
+            (y_axis=5 & act=1) :  6 ;
+            (y_axis=6 & act=2) :  5 ;
+            (y_axis=6 & act=1) :  7 ;
+            (y_axis=7 & act=2) :  6 ;
+            (y_axis=7 & act=1) :  8 ;
+            (y_axis=8 & act=2) :  7 ;
+            (y_axis=8 & act=1) :  9 ;
+            (y_axis=9 & act=2) :  8 ;
+            (y_axis=9 & act=1) :  10 ;
+            (y_axis=10 & act=2) :  9 ;
+            (y_axis=10 & act=1) :  11 ;
+            (y_axis=11 & act=2) :  10 ;
+            (y_axis=11 & act=1) :  12 ;
+            (y_axis=12 & act=2) :  11 ;
+            (y_axis=12 & act=1) :  13 ;
+            (y_axis=13 & act=2) :  12 ;
+            (y_axis=13 & act=1) :  14 ;
+            (y_axis=14 & act=2) :  13 ;
+            (y_axis=14 & act=1) :  15 ;
+            (y_axis=15 & act=2) :  14 ;
+            (y_axis=15 & act=1) :  16 ;
+            (y_axis=16 & act=2) :  15 ;
+            (y_axis=16 & act=1) :  17 ;
+            (y_axis=17 & act=2) :  16 ;
+            (y_axis=17 & act=1) :  18 ;
+            (y_axis=18 & act=2) :  17 ;
+            (y_axis=18 & act=1) :  19 ;
+            (y_axis=19 & act=2) :  18 ;
+            TRUE: y_axis;
+        esac;
+
+DEFINE
+    BEGIN := ((x_axis=0 & y_axis=0) | (x_axis=1 & y_axis=0) | (x_axis=2 & y_axis=0));
+    GOAL :=  ((x_axis=6 & y_axis=9) | (x_axis=7 & y_axis=9) | (x_axis=8 & y_axis=9));

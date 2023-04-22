@@ -1,0 +1,562 @@
+--
+-- // SNARK structure (with some accelerations):
+-- // 0   ------- STAND BY: could go to line:1/ line:10/ line:19
+-- // 	  popRight() starts:
+-- // 1   - getRightHat as rh
+-- // 2		- getLeftHat as lh
+-- // 3		- if (rh is self-pointing) return assign popRight_FAIL
+-- // 4 	- else if (rh equals lh)
+-- // 5			DCAS (RightHat, LeftHat, rh, lh, Dummy, Dummy)
+-- // 6			assign pop_result as rh->V
+-- // 7		- else  assign rhl as rh->L
+-- // 8				DCAS (RightHat, rh->L, rh, rhL, rhL, rh)
+-- // 9				assign popRight_result as rh->V, assign rh->R as DUMMY
+-- //     pushRight() starts:
+-- // 10    - assing nd as Y --> if null, return pushRight_FAIL
+-- // 11		- assign nd->R as Dummy,assign nd-> V as something (zero for now)
+-- // 12		- assign rh as RightHat, assign rhR as rh->R
+-- // 13		if (rh == rhR), assign nd -> L = Dummy, assign lh = LeftHat
+-- // 14			 DCAS (RightHat, LeftHat, rh, lh, nd, nd)
+-- // 15			 return pushRight_SUCCESS
+-- // 16		else   assign nd->L as rh
+-- // 17			   DCAS(RightHat, rh->R, rh, rhR, nd, nd)
+-- // 18			   return pushRight_SUCCESS
+-- //  	  popLeft() starts:
+-- // 19		- assign lh as LeftHat, assign rh as RightHat
+-- // 20		- if (lh is self-pointing), return assign popLeft_FAIL
+-- // 21		- else if (lh == rh)
+-- // 22				DCAS (LeftHat, RightHat, lh, rh, Dummy, Dummy)
+-- // 23				assign popLeft_result as lh -> V
+-- // 24		- else  assign lhR as lh->R
+-- // 25				DCAS (LeftHat, lh->R, lh, lhR, lfR, lh)
+-- // 26				assign popLeft_result as lh->V, assign lh_L as DDUMMY
+
+MODULE main
+VAR
+	RightHat: 0..2; -- could be DUNNY, x, y, or z
+	LeftHat: 0..2; -- could be DUMMY, x, y, or z
+
+	AllNodes[0][0]: 0..2;
+	AllNodes[0][1]: 0..2;
+	AllNodes[1][0]: 0..2;
+	AllNodes[1][1]: 0..2;
+	AllNodes[2][0]: 0..2;
+	AllNodes[2][1]: 0..2;
+
+	First_ProcID: 1..2;
+	Second_ProcID: 1..2;
+
+
+	-- ##############################################################################
+	-- Proc 1 VAR
+	proc1.line: 0..26;
+	-- popRight local variables
+	proc1.local_popR_RH: 0..2; -- could be DUMMY, x,or y
+	proc1.local_popR_LH: 0..2; -- could be DUMMY, x,or y
+	proc1.local_popR_RHL: 0..2; -- could be DUMMY, x,or y
+
+	-- popLeft local variables
+	proc1.local_popL_RH: 0..2; -- could be DUMMY, x,or y
+	proc1.local_popL_LH: 0..2; -- could be DUMMY, x,or y
+	proc1.local_popL_LHR: 0..2; -- could be DUMMY, x,or y
+
+	-- pushRight local variables
+	proc1.local_pushR_RH: 0..2; -- could be DUMMY, x,or y
+	proc1.local_pushR_RHR: 0..2; -- xcould be DUMMY, x,or y
+	proc1.local_pushR_LH: 0..2; -- could be DUMMY, x,or y
+	-- ##############################################################################
+
+	-- ##############################################################################
+	-- Proc 2 VAR
+	proc2.line: 0..26;
+	-- popRight local variables
+	proc2.local_popR_RH: 0..2; -- could be DUMMY, x,or y
+	proc2.local_popR_LH: 0..2; -- could be DUMMY, x,or y
+	proc2.local_popR_RHL: 0..2; -- could be DUMMY, x,or y
+
+	-- popLeft local variables
+	proc2.local_popL_RH: 0..2; -- could be DUMMY, x,or y
+	proc2.local_popL_LH: 0..2; -- could be DUMMY, x,or y
+	proc2.local_popL_LHR: 0..2; -- could be DUMMY, x,or y
+
+	-- pushRight local variables
+	proc2.local_pushR_RH: 0..2; -- could be DUMMY, x,or y
+	proc2.local_pushR_RHR: 0..2; -- xcould be DUMMY, x,or y
+	proc2.local_pushR_LH: 0..2; -- could be DUMMY, x,or y
+	-- ##############################################################################
+
+
+	-- ##############################################################################
+	-- Queue VAR
+	newnode : 0..2; -- for push right
+	popRightFAIL: boolean;
+	-- FAIL: boolean;
+	-- ##############################################################################
+
+ASSIGN
+
+	-- ##############################################################################
+	-- Global ASSIGN block
+
+	init(First_ProcID) 	:= 1;
+	init(Second_ProcID) := 2;
+	next(First_ProcID)	:= First_ProcID;
+	next(Second_ProcID)	:= Second_ProcID;
+
+	init(RightHat) := 1;
+	init(LeftHat) := 1;
+	init(AllNodes[0][0]) := 0;
+	init(AllNodes[0][1]) := 0; -- DUMMY
+	init(AllNodes[1][0]) := 0;
+	init(AllNodes[1][1]) := 0; -- X
+	init(AllNodes[2][0]) := 2;
+	init(AllNodes[2][1]) := 2; -- Y
+
+	-- ##############################################################################
+
+
+	-- ##############################################################################
+	-- Proc 1 ASSIGN
+	init(proc1.line) := 0;
+
+	-- popRight local, all default to DUMMY
+	init(proc1.local_popR_RH) := 0;
+	init(proc1.local_popR_LH) := 0;
+	init(proc1.local_popR_RHL) := 0;
+	-- init(local_popR_return_empty):= FALSE;
+
+	-- popLeft local, all default to DUMMY
+	init(proc1.local_popL_RH) := 0;
+	init(proc1.local_popL_LH) := 0;
+	init(proc1.local_popL_LHR) := 0;
+
+
+	--pushRight local, all default to DUMMY
+	init(proc1.local_pushR_LH):= 0;
+	init(proc1.local_pushR_RH) := 0;
+	init(proc1.local_pushR_RHR) := 0;
+
+	next(proc1.line) :=
+		case
+			(proc1.line=0 & First_ProcID=1)  : {1}; 		-- STAND BY: could go to line:1/ line:10/ line:19
+			(proc1.line=0 & First_ProcID=2)  : {10,19}; 		-- STAND BY: could go to line:1/ line:10/ line:19
+			(proc1.line=1 & First_ProcID=2)  : {1};
+			(proc1.line=1 & First_ProcID=1)  : {2}; -- popRight() starts, getRightHat as rh
+			(proc1.line=2 & LeftHat=1 & RightHat=1 & First_ProcID=1)  : {2,3};
+			(proc1.line=2 & LeftHat=1 & RightHat=2 & First_ProcID=1)  : {2,3};
+			(proc1.line=3 & (proc1.local_popR_RH=1) & AllNodes[1][1]=1) : {0};
+			(proc1.line=3 & (proc1.local_popR_RH=2) & AllNodes[2][1]=2) : {0};
+			(proc1.line=3 & !((proc1.local_popR_RH=1) & AllNodes[1][1]=1)| (proc1.local_popR_RH=2) & AllNodes[1][1]=2) : {4};
+
+			(proc1.line=4 & (proc1.local_popR_RH=1 &
+				proc1.local_popR_LH=1))  : {5};
+			(proc1.line=4 & (proc1.local_popR_RH=2 & proc1.local_popR_LH=2))  : {5}; -- if (rh equals lh)
+			(proc1.line=5) : {6}; -- DCAS (RightHat, LeftHat, rh, lh, Dummy, Dummy)
+			(proc1.line=6) : {0}; -- assign pop_result as rh->V, END
+			(proc1.line=4 & !(proc1.local_popR_RH=1 & proc1.local_popR_LH=1))  : {7};
+			(proc1.line=4 & !(proc1.local_popR_RH=2 & proc1.local_popR_LH=2))  : {7};
+			(proc1.line=7)  : {8};  --assign rhl as rh->L
+			(proc1.line=8)  : {9}; -- DCAS (RightHat, rh->L, rh, rhL, rhL, rh)
+			(proc1.line=9)  : {0}; -- assign popRight_result as rh->V, assign rh->R as DUMMY
+			-- pushRIGHT
+			(proc1.line=10)  : {11}; -- pushRight() starts assing nd as Y --> if null, return pushRight_FAIL
+			(proc1.line=11)  : {12}; -- assign nd->R as Dummy,assign nd-> V as something (zero for now)
+			(proc1.line=12)  : {13}; -- assign rh as RightHat, assign rhR as rh->R
+			(proc1.line=13 & (proc1.local_pushR_RH = proc1.local_pushR_RHR))  : {14}; -- if (rh == rhR), assign nd -> L = Dummy, assign lh = LeftHat
+			(proc1.line=14)  : {15}; -- DCAS (RightHat, LeftHat, rh, lh, nd, nd)
+			(proc1.line=15)  : {0}; -- return pushRight_SUCCESS
+			(proc1.line=13 & !(proc1.local_pushR_RH = proc1.local_pushR_RHR))  : {16}; -- if !(rh == rhR)   assign nd->L as rh
+			(proc1.line=16)  : {17}; -- assign nd->L as rh
+			(proc1.line=17)  : {18}; -- DCAS(RightHat, rh->R, rh, rhR, nd, nd)
+			(proc1.line=18)  : {0}; -- return pushRight_SUCCESS
+			-- popLeft
+			(proc1.line=19)  : {20}; --- popLeft() starts, assign lh as LeftHat, assign rh as RightHat
+			(proc1.line=20)  : {21}; -- if(!lh is self-pointing)
+			(proc1.line=21 & (proc1.local_popL_LH =proc1.local_popL_RH))  : {22}; -- if(lh == rh)
+			(proc1.line=22)  : {23}; -- DCAS (LeftHat, RightHat, lh, rh, Dummy, Dummy)
+			(proc1.line=23) : {0}; -- assign popLeft_result as lh -> V, END
+			(proc1.line=21 & !(proc1.local_popL_LH =proc1.local_popL_RH)) : {24}; -- if!(lh == rh)
+			(proc1.line=24) : {25}; -- assign lhR as lh->R
+			(proc1.line=25) : {26}; -- DCAS (LeftHat, lh->R, lh, lhR, lfR, lh)
+			(proc1.line=26) : {0}; -- assign popLeft_result as lh->V, assign lh_L as DDUMMY
+			TRUE: proc1.line; -- default case
+		esac;
+
+	-- local_popR local variables
+	next(proc1.local_popR_RH) :=
+		case
+			(proc1.line=1) : RightHat;
+			TRUE : proc1.local_popR_RH;	-- default case
+		esac;
+
+	next(proc1.local_popR_LH) :=
+		case
+			(proc1.line=2) : LeftHat;
+			TRUE : proc1.local_popR_LH;	-- default case
+		esac;
+
+	next(proc1.local_popR_RHL) :=
+		case
+			!(proc1.line=7) : proc1.local_popR_RHL;
+			(proc1.line=7 & proc1.local_popR_RH=0) : AllNodes[0][0];
+			(proc1.line=7 & proc1.local_popR_RH=1) : AllNodes[1][0];
+			(proc1.line=7 & proc1.local_popR_RH=2) : AllNodes[2][0];
+			TRUE : proc1.local_popR_RHL;	-- default case
+		esac;
+
+	-- local_pushR local variables
+	next(proc1.local_pushR_RH) :=
+		case
+			(proc1.line=12): RightHat;
+			TRUE: proc1.local_pushR_RH;
+		esac;
+
+	next(proc1.local_pushR_LH) :=
+		case
+			(proc1.line=13 & (proc1.local_pushR_RH = proc1.local_pushR_RHR)): LeftHat;
+			TRUE: proc1.local_pushR_LH;
+		esac;
+
+	next(proc1.local_pushR_RHR) :=
+		case
+			(proc1.line=12 & proc1.local_pushR_RH = 0): AllNodes[0][1];
+			(proc1.line=12 & proc1.local_pushR_RH = 1): AllNodes[1][1];
+			(proc1.line=12 & proc1.local_pushR_RH = 2): AllNodes[2][1];
+			TRUE: proc1.local_pushR_RHR;
+		esac;
+
+	next(proc1.local_popL_LH) :=
+		case
+			(proc1.line=19) : LeftHat;
+			TRUE : proc1.local_popL_LH;	-- default case
+		esac;
+
+	next(proc1.local_popL_RH) :=
+		case
+			(proc1.line=19) : RightHat;
+			TRUE : proc1.local_popL_RH;	-- default case
+		esac;
+
+
+	next(proc1.local_popL_LHR) :=
+		case
+			(proc1.line=24 & proc1.local_popL_LH=0) : AllNodes[0][1];
+			(proc1.line=24 & proc1.local_popL_LH=1) : AllNodes[1][1];
+			(proc1.line=24 & proc1.local_popL_LH=2) : AllNodes[2][1];
+			TRUE : proc1.local_popL_LHR;	-- default case
+		esac;
+
+	-- ##############################################################################
+
+	-- ##############################################################################
+	-- Proc 2 ASSIGN
+
+	init(proc2.line) := 0;
+
+	-- popRight local, all default to DUMMY
+	init(proc2.local_popR_RH) := 0;
+	init(proc2.local_popR_LH) := 0;
+	init(proc2.local_popR_RHL) := 0;
+	-- init(local_popR_return_empty):= FALSE;
+
+	-- popLeft local, all default to DUMMY
+	init(proc2.local_popL_RH) := 0;
+	init(proc2.local_popL_LH) := 0;
+	init(proc2.local_popL_LHR) := 0;
+
+
+	--pushRight local, all default to DUMMY
+	init(proc2.local_pushR_LH):= 0;
+	init(proc2.local_pushR_RH) := 0;
+	init(proc2.local_pushR_RHR) := 0;
+
+
+	next(proc2.line) :=
+		case
+			-- STNAD BY
+			(proc2.line=0 & Second_ProcID=1)  : {1}; 		-- STAND BY: could go to line:1/ line:10/ line:19
+			(proc2.line=0 & Second_ProcID=2)  : {10,19}; 		-- STAND BY: could go to line:1/ line:10/ line:19
+			-- popRIGHT() start
+			(proc2.line=1 & Second_ProcID=2)  : {1};
+			(proc2.line=1 & Second_ProcID=1)  : {2}; -- popRight() starts, getRightHat as rh
+			(proc2.line=2 & LeftHat=1 & RightHat=1 & Second_ProcID=1)  : {2,3};
+			(proc2.line=2 & LeftHat=1 & RightHat=2 & Second_ProcID=1)  : {2,3};
+			(proc2.line=3 & (proc2.local_popR_RH=1) & AllNodes[1][1]=1) : {0};
+			(proc2.line=3 & (proc2.local_popR_RH=2) & AllNodes[2][1]=2) : {0};
+			(proc2.line=3 & !((proc2.local_popR_RH=1) & AllNodes[1][1]=1)| (proc2.local_popR_RH=2) & AllNodes[1][1]=2) : {4};
+
+			(proc2.line=4 & (proc2.local_popR_RH=1 &
+				proc2.local_popR_LH=1))  : {5};
+			(proc2.line=4 & (proc2.local_popR_RH=2 & proc2.local_popR_LH=2))  : {5}; -- if (rh equals lh)
+			(proc2.line=5) : {6}; -- DCAS (RightHat, LeftHat, rh, lh, Dummy, Dummy)
+			(proc2.line=6) : {0}; -- assign pop_result as rh->V, END
+			(proc2.line=4 & !(proc2.local_popR_RH=1 & proc2.local_popR_LH=1))  : {7};
+			(proc2.line=4 & !(proc2.local_popR_RH=2 & proc2.local_popR_LH=2))  : {7};
+			(proc2.line=7)  : {8};  --assign rhl as rh->L
+			(proc2.line=8)  : {9}; -- DCAS (RightHat, rh->L, rh, rhL, rhL, rh)
+			(proc2.line=9)  : {0}; -- assign popRight_result as rh->V, assign rh->R as DUMMY
+			-- pushRIGHT
+			(proc2.line=10)  : {11}; -- pushRight() starts assing nd as Y --> if null, return pushRight_FAIL
+			(proc2.line=11)  : {12}; -- assign nd->R as Dummy,assign nd-> V as something (zero for now)
+			(proc2.line=12)  : {13}; -- assign rh as RightHat, assign rhR as rh->R
+			(proc2.line=13 & (proc2.local_pushR_RH = proc2.local_pushR_RHR))  : {14}; -- if (rh == rhR), assign nd -> L = Dummy, assign lh = LeftHat
+			(proc2.line=14)  : {15}; -- DCAS (RightHat, LeftHat, rh, lh, nd, nd)
+			(proc2.line=15)  : {0}; -- return pushRight_SUCCESS
+			(proc2.line=13 & !(proc2.local_pushR_RH = proc2.local_pushR_RHR))  : {16}; -- if !(rh == rhR)   assign nd->L as rh
+			(proc2.line=16)  : {17}; -- assign nd->L as rh
+			(proc2.line=17)  : {18}; -- DCAS(RightHat, rh->R, rh, rhR, nd, nd)
+			(proc2.line=18)  : {0}; -- return pushRight_SUCCESS
+			-- popLeft
+			(proc2.line=19)  : {20}; --- popLeft() starts, assign lh as LeftHat, assign rh as RightHat
+			(proc2.line=20)  : {21}; -- if(!lh is self-pointing)
+			(proc2.line=21 & (proc2.local_popL_LH =proc2.local_popL_RH))  : {22}; -- if(lh == rh)
+			(proc2.line=22)  : {23}; -- DCAS (LeftHat, RightHat, lh, rh, Dummy, Dummy)
+			(proc2.line=23) : {0}; -- assign popLeft_result as lh -> V, END
+			(proc2.line=21 & !(proc2.local_popL_LH =proc2.local_popL_RH)) : {24}; -- if!(lh == rh)
+			(proc2.line=24) : {25}; -- assign lhR as lh->R
+			(proc2.line=25) : {26}; -- DCAS (LeftHat, lh->R, lh, lhR, lfR, lh)
+			(proc2.line=26) : {0}; -- assign popLeft_result as lh->V, assign lh_L as DDUMMY
+			TRUE: proc2.line; -- default case
+		esac;
+
+
+	-- local_popR local variables
+	next(proc2.local_popR_RH) :=
+		case
+			(proc2.line=1) : RightHat;
+			TRUE : proc2.local_popR_RH;	-- default case
+		esac;
+
+	next(proc2.local_popR_LH) :=
+		case
+			(proc2.line=2) : LeftHat;
+			TRUE : proc2.local_popR_LH;	-- default case
+		esac;
+
+	next(proc2.local_popR_RHL) :=
+		case
+			!(proc2.line=7) : proc2.local_popR_RHL;
+			(proc2.line=7 & proc2.local_popR_RH=0) : AllNodes[0][0];
+			(proc2.line=7 & proc2.local_popR_RH=1) : AllNodes[1][0];
+			(proc2.line=7 & proc2.local_popR_RH=2) : AllNodes[2][0];
+			TRUE : proc2.local_popR_RHL;	-- default case
+		esac;
+
+	-- local_pushR local variables
+	next(proc2.local_pushR_RH) :=
+		case
+			(proc2.line=12): RightHat;
+			TRUE: proc2.local_pushR_RH;
+		esac;
+
+	next(proc2.local_pushR_LH) :=
+		case
+			(proc2.line=13 & (proc2.local_pushR_RH = proc2.local_pushR_RHR)): LeftHat;
+			TRUE: proc2.local_pushR_LH;
+		esac;
+
+	next(proc2.local_pushR_RHR) :=
+		case
+			(proc2.line=12 & proc2.local_pushR_RH = 0): AllNodes[0][1];
+			(proc2.line=12 & proc2.local_pushR_RH = 1): AllNodes[1][1];
+			(proc2.line=12 & proc2.local_pushR_RH = 2): AllNodes[2][1];
+			TRUE: proc2.local_pushR_RHR;
+		esac;
+
+	next(proc2.local_popL_LH) :=
+		case
+			(proc2.line=19) : LeftHat;
+			TRUE : proc2.local_popL_LH;	-- default case
+		esac;
+
+	next(proc2.local_popL_RH) :=
+		case
+			(proc2.line=19) : RightHat;
+			TRUE : proc2.local_popL_RH;	-- default case
+		esac;
+
+
+	next(proc2.local_popL_LHR) :=
+		case
+			(proc2.line=24 & proc2.local_popL_LH=0) : AllNodes[0][1];
+			(proc2.line=24 & proc2.local_popL_LH=1) : AllNodes[1][1];
+			(proc2.line=24 & proc2.local_popL_LH=2) : AllNodes[2][1];
+			TRUE : proc2.local_popL_LHR;	-- default case
+		esac;
+
+	-- ##############################################################################
+
+
+	-- ##############################################################################
+	-- Queue ASSIGN
+	init(newnode) := 2;
+	next(newnode) := newnode;
+
+	-- to cehck, use GlobalQueue-popRightFAIL[tid]
+	init(popRightFAIL) := FALSE;
+	next(popRightFAIL) :=
+		case
+			((proc1.line=3) & (proc1.local_popR_RH=1 & AllNodes[1][1]=1)) : TRUE;
+			((proc1.line=3) & (proc1.local_popR_RH=2 & AllNodes[2][1]=2)) : TRUE;
+			((proc2.line=3) & (proc2.local_popR_RH=0)) : TRUE;
+			TRUE: popRightFAIL;
+		esac;
+
+	next(RightHat) :=
+		case
+			BOTH_MODIFYING : RightHat;
+
+			((proc1.line=5 & !FAIL) | (proc2.line=5 & !FAIL)) : 0; -- set to DUMMY
+
+			((proc1.line=22 & RightHat=proc1.local_popL_RH) | (proc2.line=22 & RightHat=proc2.local_popL_RH)) : 0; -- set to DUMMY
+			-- DCAS
+			((proc1.line=8) & !FAIL & (proc1.local_popR_RHL=0)) : 0; -- set to RH->L 0
+			((proc1.line=8) & !FAIL & (proc1.local_popR_RHL=1)) : 1; -- set to RH->L 0
+			((proc1.line=8) & !FAIL & (proc1.local_popR_RHL=2)) : 2; -- set to RH->L 0
+			-- DCAS
+			((proc2.line=8) & !FAIL & (proc2.local_popR_RHL=0)) : 0; -- set to RH->L 0
+			((proc2.line=8) & !FAIL & (proc2.local_popR_RHL=1)) : 1; -- set to RH->L 0
+			((proc2.line=8) & !FAIL & (proc2.local_popR_RHL=2)) : 2; -- set to RH->L 0
+			((proc1.line=14) | (proc2.line=14)) : 2; -- set to newnode
+			((proc1.line=16 & RightHat=proc1.local_pushR_RH) |
+					(proc2.line=16 & RightHat=proc2.local_pushR_RH)) : 2;
+			TRUE: RightHat;
+		esac;
+
+	next(LeftHat) :=
+		case
+			BOTH_MODIFYING : LeftHat;
+			--- SWAP if DCAS
+			((proc1.line=5 & !FAIL) | (proc2.line=5 & !FAIL)) : 0; -- set to DUMMY
+
+			-- SWAP if DCAS
+			((proc1.line=22 & RightHat=proc1.local_popL_RH) | (proc2.line=22 & RightHat=proc2.local_popL_RH)) : 0; -- set to DUMMY
+
+			((proc1.line=25) & (proc1.local_popL_LHR=0)) : 0; -- set to LH->R 0
+			((proc1.line=25) & (proc1.local_popL_LHR=1)) : 1; -- set to LH->R 0
+			((proc1.line=25) & (proc1.local_popL_LHR=2)) : 2; -- set to LH->R 0
+
+			((proc2.line=25) & (proc2.local_popL_LHR=0)) : 0; -- set to LH->R 0
+			((proc2.line=25) & (proc2.local_popL_LHR=1)) : 1; -- set to LH->R 0
+			((proc2.line=25) & (proc2.local_popL_LHR=2)) : 2; -- set to LH->R 0
+
+			((proc1.line=14) | (proc2.line=14)) : 2; --set to newnode
+			TRUE: LeftHat;
+		esac;
+
+	--- GLOBAL variables for double-ended queue
+	next(AllNodes[0][0]) := AllNodes[0][0]; -- DUMMY
+	next(AllNodes[0][1]) := AllNodes[0][1]; -- DUMMY
+
+	-- X -> L
+	next(AllNodes[1][0]) :=
+		case
+			BOTH_MODIFYING: AllNodes[1][0]; --?
+
+			((proc1.line=8) & !FAIL & (proc1.local_popR_RH=1)): 1;
+			((proc1.line=26) & (proc1.local_popL_LH=1) & (LeftHat=1)): 0;
+
+			((proc2.line=8) & !FAIL & (proc2.local_popR_RH=1)): 1;
+			((proc2.line=26) & (proc2.local_popL_LH=1) & (LeftHat=1)): 0;
+			TRUE: AllNodes[1][0];
+		esac;
+
+	-- X -> R
+	next(AllNodes[1][1]) :=
+		case
+			BOTH_MODIFYING : AllNodes[1][1]; --?
+
+			((proc1.line=17) & (proc1.local_pushR_RH=1)): 2; -- newnode
+			((proc1.line=25) & !FAIL & (proc1.local_popL_LH=1)): 1;
+			((proc1.line=9) & (proc1.local_popR_RH=1)& (RightHat=1)): 0;
+
+			((proc2.line=17) & (proc2.local_pushR_RH=1)): 2; -- newnode
+			((proc2.line=25) & !FAIL & (proc2.local_popL_LH=1)): 1;
+			((proc2.line=9) & (proc2.local_popR_RH=1) & (RightHat=1)): 0;
+			TRUE: AllNodes[1][1];
+		esac;
+
+	-- Y -> L
+	next(AllNodes[2][0]) :=
+		case
+			BOTH_MODIFYING : AllNodes[2][0];
+
+			((proc1.line=8) & !FAIL & (proc1.local_popR_RH=2)) : 2;
+			-- ?
+			((proc1.line=26) & (proc1.local_popL_LH=2) & (LeftHat=2)): 0;
+
+			((proc1.line=16) & proc1.local_pushR_RH=1): 1;
+			((proc1.line=16) & proc1.local_pushR_RH=2): 2;
+
+			((proc2.line=8) & !FAIL & (proc2.local_popR_RH=2)) : 2;
+			-- ?
+			((proc2.line=26) & (proc2.local_popL_LH=2) & (LeftHat=2)): 0;
+
+			((proc2.line=16) & proc2.local_pushR_RH=1): 1;
+			((proc2.line=16) & proc2.local_pushR_RH=2): 2;
+			TRUE: AllNodes[2][0];
+		esac;
+
+	-- Y -> R
+	next(AllNodes[2][1]) :=
+		case
+			BOTH_MODIFYING : AllNodes[2][1];
+
+			(proc1.line=11): 0;
+			((proc1.line=9) & (proc1.local_popR_RH=2) & (RightHat=2)): 0;
+			((proc1.line=25) & !FAIL & (proc1.local_popL_LH=2)): 2;
+
+
+			(proc2.line=11): 0;
+			((proc1.line=9) & (proc1.local_popR_RH=2) & (RightHat=2)): 0;
+			((proc2.line=25) & !FAIL & (proc2.local_popL_LH=2)): 2;
+			TRUE: AllNodes[2][1];
+		esac;
+
+
+	-- ##############################################################################
+
+
+DEFINE
+	-- ##############################################################################
+	-- Proc1 DEFINE
+	proc1.modifying := (proc1.line=5 | proc1.line=8 | proc1.line=14 | proc1.line=17 | proc1.line=16 | proc1.line=11 | proc1.line=22 | proc1.line=25);
+	proc1.popRightSTART 	:= proc1.line=1 | proc1.line=2 | proc1.line=3 | proc1.line=4 | proc1.line=5 | proc1.line=6 | proc1.line=7 | proc1.line=8 | proc1.line=9;
+	proc1.popRightEND 		:= proc1.line=0;
+	proc1.pushRightSTART	:= proc1.line=10 | proc1.line=11| proc1.line=12 | proc1.line=13 | proc1.line=14 | proc1.line=15 | proc1.line=16 | proc1.line=17 | proc1.line=18;
+	proc1.pushRightEND		:= proc1.line=0;
+	proc1.popLeftSTART		:= proc1.line=19 | proc1.line=20 | proc1.line=21 | proc1.line=22 | proc1.line=23 | proc1.line=24 | proc1.line=25 | proc1.line=26;
+	proc1.popLeftEND			:= proc1.line=0;
+	-- ##############################################################################
+
+	-- ##############################################################################
+	-- Proc2 DEFINE
+	proc2.modifying := (proc2.line=5 | proc2.line=8 | proc2.line=14 | proc2.line=17 | proc2.line=16 | proc2.line=11 | proc2.line=22 | proc2.line=25);
+	proc2.popRightSTART 	:= proc2.line=1 | proc2.line=2 | proc2.line=3 | proc2.line=4 | proc2.line=5 | proc2.line=6 | proc2.line=7 | proc2.line=8 | proc2.line=9;
+	proc2.popRightEND 		:= proc2.line=0;
+	proc2.pushRightSTART	:= proc2.line=10 | proc2.line=11| proc2.line=12 | proc2.line=13 | proc2.line=14 | proc2.line=15 | proc2.line=16 | proc2.line=17 | proc2.line=18;
+	proc2.pushRightEND		:= proc2.line=0;
+	proc2.popLeftSTART		:= proc2.line=19 | proc2.line=20 | proc2.line=21 | proc2.line=22 | proc2.line=23 | proc2.line=24 | proc2.line=25 | proc2.line=26;
+	proc2.popLeftEND			:= proc2.line=0;
+	-- ##############################################################################
+
+
+	-- ##############################################################################
+	-- Queue DEFINE
+	BOTH_MODIFYING := (proc1.modifying & proc2.modifying);
+	FAIL :=	 ((proc1.line=5) & (	!(RightHat=proc1.local_popR_RH)
+																	| !(LeftHat=proc1.local_popR_LH)))
+							|((proc1.line=8) & (  !(RightHat=proc1.local_popR_RH)
+																	| !(proc1.local_popR_RH=1 -> (AllNodes[1][0]=proc1.local_popR_RHL))
+																	| !(proc1.local_popR_RH=2 -> (AllNodes[2][0]=proc1.local_popR_RHL))))
+							|((proc1.line=22) & (	!(RightHat=proc1.local_popL_RH)
+																	| !(LeftHat=proc1.local_popL_LH)))
+							|((proc1.line=25) & (  !(LeftHat=proc1.local_popL_LH)
+																	| !(proc1.local_popL_LH=1 -> (AllNodes[1][1]=proc1.local_popL_LHR))
+																	| !(proc1.local_popL_LH=2 -> (AllNodes[2][1]=proc1.local_popL_LHR))))
+								--- if full
+							|((proc1.line=13) & RightHat=2)
+							|((proc2.line=13) & RightHat=2)
+							|((proc2.line=20) & RightHat=0 & RightHat=0)
+							| BOTH_MODIFYING;
+	-- ##############################################################################

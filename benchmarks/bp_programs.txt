@@ -1,0 +1,16 @@
+concur_p1_1bit.txt
+concur_p1_3bit.txt
+concur_p1_4bit.txt
+concur_p2_1bit.txt
+concur_p3_1bit.txt 
+concur_p3_3bit.txt
+concur_p4_1bit.txt
+concur_p4_3bit.txt
+lmcs_p1_1bit.txt
+lmcs_p2_1bit.txt
+lmcs_p2_2bit.txt
+lmcs_p2_4bit.txt
+lmcs_p3_1bit.txt
+lmcs_p3_3bit.txt
+lmcs_p4_1bit.txt
+lmcs_p4_3bit.txt

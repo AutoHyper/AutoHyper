@@ -1,0 +1,195 @@
+
+ MODULE main
+ VAR
+    x_axis: 0..9;
+    y_axis: 0..9;
+
+    TOKEN: 0..1;
+ASSIGN
+    init(TOKEN):= 0;
+    next(TOKEN):= {0,1};
+
+    init(x_axis) := {0};
+    next(x_axis) :=
+        case
+            (TOKEN=0) : x_axis;
+            (x_axis=0 & RIGHT ) : {1};
+
+            (x_axis=1 & LEFT & RIGHT) : {0,2};
+            (x_axis=1 & LEFT & !RIGHT) : {0};
+            (x_axis=1 & !LEFT & RIGHT) : {2};
+            (x_axis=2 & LEFT & RIGHT) : {1,3};
+            (x_axis=2 & LEFT & !RIGHT) : {1};
+            (x_axis=2 & !LEFT & RIGHT) : {3};
+            (x_axis=3 & LEFT & RIGHT) : {2,4};
+            (x_axis=3 & LEFT & !RIGHT) : {2};
+            (x_axis=3 & !LEFT & RIGHT) : {4};
+            (x_axis=4 & LEFT & RIGHT) : {3,5};
+            (x_axis=4 & LEFT & !RIGHT) : {3};
+            (x_axis=4 & !LEFT & RIGHT) : {5};
+            (x_axis=5 & LEFT & RIGHT) : {4,6};
+            (x_axis=5 & LEFT & !RIGHT) : {4};
+            (x_axis=5 & !LEFT & RIGHT) : {6};
+            (x_axis=6 & LEFT & RIGHT) : {5,7};
+            (x_axis=6 & LEFT & !RIGHT) : {5};
+            (x_axis=6 & !LEFT & RIGHT) : {7};
+            (x_axis=7 & LEFT & RIGHT) : {6,8};
+            (x_axis=7 & LEFT & !RIGHT) : {6};
+            (x_axis=7 & !LEFT & RIGHT) : {8};
+            (x_axis=8 & LEFT & RIGHT) : {7,9};
+            (x_axis=8 & LEFT & !RIGHT) : {7};
+            (x_axis=8 & !LEFT & RIGHT) : {9};
+            (x_axis=9 & LEFT & RIGHT) : {8,10};
+            (x_axis=9 & LEFT & !RIGHT) : {8};
+            (x_axis=9 & !LEFT & RIGHT) : {10};
+
+            TRUE: x_axis;
+        esac;
+
+
+    init(y_axis) := 0;
+    next(y_axis) :=
+        case
+            (TOKEN=1) : y_axis;
+            -- (FAIL): y_axis;
+            (y_axis=0 & UP) : {1};
+
+            (y_axis=1 & UP & DOWN) : {2,0};
+            (y_axis=1 & UP & !DOWN) : {2};
+            (y_axis=1 & !UP & DOWN) : {0};
+            (y_axis=2 & UP & DOWN) : {3,1};
+            (y_axis=2 & UP & !DOWN) : {3};
+            (y_axis=2 & !UP & DOWN) : {1};
+            (y_axis=3 & UP & DOWN) : {4,2};
+            (y_axis=3 & UP & !DOWN) : {4};
+            (y_axis=3 & !UP & DOWN) : {2};
+            (y_axis=4 & UP & DOWN) : {5,3};
+            (y_axis=4 & UP & !DOWN) : {5};
+            (y_axis=4 & !UP & DOWN) : {3};
+            (y_axis=5 & UP & DOWN) : {6,4};
+            (y_axis=5 & UP & !DOWN) : {6};
+            (y_axis=5 & !UP & DOWN) : {4}; 
+            (y_axis=6 & UP & DOWN) : {7,5};
+            (y_axis=6 & UP & !DOWN) : {7};
+            (y_axis=6 & !UP & DOWN) : {5};
+            (y_axis=7 & UP & DOWN) : {8,6};
+            (y_axis=7 & UP & !DOWN) : {8};
+            (y_axis=7 & !UP & DOWN) : {6};
+            (y_axis=8 & UP & DOWN) : {9,7};
+            (y_axis=8 & UP & !DOWN) : {9};
+            (y_axis=8 & !UP & DOWN) : {7};
+            (y_axis=9 & UP & DOWN) : {10,8};
+            (y_axis=9 & UP & !DOWN) : {10};
+            (y_axis=9 & !UP & DOWN) : {8};
+            
+            TRUE: y_axis;
+        esac;
+DEFINE
+    GOAL := ((x_axis=7 & y_axis=5));
+
+    LEFT := (!(x_axis=0))
+                & !(x_axis=7 & y_axis=6)
+                & !(x_axis=8 & y_axis=6)
+                & !(x_axis=5 & y_axis=5)
+                & !(x_axis=4 & y_axis=4)
+                & !(x_axis=6 & y_axis=4)
+                & !(x_axis=2 & y_axis=8)
+                & !(x_axis=7 & y_axis=4)
+                & !(x_axis=5 & y_axis=9)
+                & !(x_axis=3 & y_axis=6)
+                & !(x_axis=5 & y_axis=6)
+                & !(x_axis=2 & y_axis=5)
+                & !(x_axis=7 & y_axis=3)
+                & !(x_axis=3 & y_axis=9)
+                & !(x_axis=9 & y_axis=5)
+                & !(x_axis=4 & y_axis=5)
+                & !(x_axis=4 & y_axis=1)
+                & !(x_axis=6 & y_axis=0)
+                & !(x_axis=9 & y_axis=6)
+                & !(x_axis=2 & y_axis=6)
+                & !(x_axis=4 & y_axis=6)
+                & !(x_axis=4 & y_axis=8)
+                & !(x_axis=2 & y_axis=9)
+                & !(x_axis=3 & y_axis=8)
+                & !(x_axis=8 & y_axis=4)
+                & !(x_axis=2 & y_axis=3);
+
+    RIGHT:= (!(x_axis=9))
+                & !(x_axis=5 & y_axis=4)
+                & !(x_axis=7 & y_axis=6)
+                & !(x_axis=7 & y_axis=5)
+                & !(x_axis=4 & y_axis=0)
+                & !(x_axis=4 & y_axis=4)
+                & !(x_axis=6 & y_axis=6)
+                & !(x_axis=6 & y_axis=4)
+                & !(x_axis=2 & y_axis=8)
+                & !(x_axis=2 & y_axis=4)
+                & !(x_axis=3 & y_axis=6)
+                & !(x_axis=1 & y_axis=6)
+                & !(x_axis=8 & y_axis=1)
+                & !(x_axis=2 & y_axis=1)
+                & !(x_axis=5 & y_axis=6)
+                & !(x_axis=2 & y_axis=5)
+                & !(x_axis=0 & y_axis=3)
+                & !(x_axis=5 & y_axis=3)
+                & !(x_axis=3 & y_axis=9)
+                & !(x_axis=1 & y_axis=8)
+                & !(x_axis=0 & y_axis=6)
+                & !(x_axis=0 & y_axis=9)
+                & !(x_axis=2 & y_axis=6)
+                & !(x_axis=1 & y_axis=9)
+                & !(x_axis=0 & y_axis=8)
+                & !(x_axis=3 & y_axis=5)
+                & !(x_axis=0 & y_axis=5);
+
+    UP   := (!(y_axis=9))
+                & !(x_axis=3 & y_axis=3)
+                & !(x_axis=1 & y_axis=4)
+                & !(x_axis=3 & y_axis=0)
+                & !(x_axis=8 & y_axis=5)
+                & !(x_axis=3 & y_axis=4)
+                & !(x_axis=7 & y_axis=5)
+                & !(x_axis=4 & y_axis=4)
+                & !(x_axis=2 & y_axis=7)
+                & !(x_axis=1 & y_axis=5)
+                & !(x_axis=6 & y_axis=5)
+                & !(x_axis=2 & y_axis=8)
+                & !(x_axis=6 & y_axis=2)
+                & !(x_axis=3 & y_axis=7)
+                & !(x_axis=2 & y_axis=5)
+                & !(x_axis=7 & y_axis=3)
+                & !(x_axis=5 & y_axis=3)
+                & !(x_axis=4 & y_axis=5)
+                & !(x_axis=1 & y_axis=8)
+                & !(x_axis=9 & y_axis=0)
+                & !(x_axis=1 & y_axis=7)
+                & !(x_axis=6 & y_axis=3)
+                & !(x_axis=4 & y_axis=8)
+                & !(x_axis=1 & y_axis=2)
+                & !(x_axis=3 & y_axis=5)
+                & !(x_axis=8 & y_axis=4);
+
+    DOWN   := (!(y_axis=0))
+                & !(x_axis=1 & y_axis=4)
+                & !(x_axis=8 & y_axis=6)
+                & !(x_axis=5 & y_axis=5)
+                & !(x_axis=7 & y_axis=5)
+                & !(x_axis=8 & y_axis=7)
+                & !(x_axis=2 & y_axis=7)
+                & !(x_axis=6 & y_axis=5)
+                & !(x_axis=6 & y_axis=4)
+                & !(x_axis=4 & y_axis=7)
+                & !(x_axis=7 & y_axis=7)
+                & !(x_axis=3 & y_axis=6)
+                & !(x_axis=3 & y_axis=7)
+                & !(x_axis=1 & y_axis=6)
+                & !(x_axis=6 & y_axis=7)
+                & !(x_axis=3 & y_axis=2)
+                & !(x_axis=3 & y_axis=9)
+                & !(x_axis=4 & y_axis=6)
+                & !(x_axis=1 & y_axis=9)
+                & !(x_axis=1 & y_axis=7)
+                & !(x_axis=9 & y_axis=2)
+                & !(x_axis=2 & y_axis=9)
+                & !(x_axis=5 & y_axis=1)
+                & !(x_axis=3 & y_axis=5);

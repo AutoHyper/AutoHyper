@@ -1,0 +1,38 @@
+forall A. exists B.
+!(
+    G (!*FAIL*_A) 
+    &
+        (F!
+            (
+                (
+                    (*proc1.popRightSTART*_A <-> *proc1.popRightSTART*_B) 
+                    &
+                    (*proc1.popRightEND*_A <-> *proc1.popRightEND*_B)
+                    &
+                    (*proc1.pushRightSTART*_A <-> *proc1.pushRightSTART*_B)
+                    &     
+                    (*proc1.pushRightEND*_A <-> *proc1.pushRightEND*_B)
+                    &
+                    (*proc1.popLeftSTART*_A <-> *proc1.popLeftSTART*_B)  
+                    &
+                    (*proc1.popLeftEND*_A <-> *proc1.popLeftEND*_B)
+                    & 
+                    (*proc2.popRightSTART*_A <-> *proc2.popRightSTART*_B)
+                    &   
+                    (*proc2.popRightEND*_A <-> *proc2.popRightEND*_B)
+                    &
+                    (*proc2.pushRightSTART*_A <-> *proc2.pushRightSTART*_B)
+                    & 
+                    (*proc2.pushRightEND*_A <-> *proc2.pushRightEND*_B)
+                    &
+                    (*proc2.popLeftSTART*_A <-> *proc2.popLeftSTART*_B) 
+                    &
+                    (*proc2.popLeftEND*_A <-> *proc2.popLeftEND*_B)
+                )
+                &
+                (
+                    (*popRightFAIL*_A <-> *popRightFAIL*_B)
+                )
+            )
+        )
+)

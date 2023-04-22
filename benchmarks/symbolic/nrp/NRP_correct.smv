@@ -1,0 +1,86 @@
+-- Non-repudiation Protocol
+
+-- (1) skip until P->T: m ;
+-- (2) skip until P->T: NRO ;
+-- (3) T-.Q: m ;
+-- (4) skip until Q->T: NRR;
+-- (5) T->Q: NRO;
+-- (6) T->P: NRR;
+
+MODULE main
+VAR
+	sender_actions: 0..4; 	-- 0: skip;
+													-- 1: send receiver msg;
+													-- 2: send third-party msg:
+													-- 3: send receiver NRO;
+													-- 4: send send third-party NRO;
+
+
+	receiver_actions: 0..2; -- 0: skip;
+													-- 1: send sender NRR;
+													-- 2: send third-party NRR:
+
+
+	thirdparty_actions: 0..3; -- 0: skip;
+														-- 1: send receiver msg
+														-- 2: send sender NRO;
+														-- 3: send receiver NRR:
+
+	take_turns: 0..2; -- 0: sender, 1:receiver, 2:thridparty
+
+	line: 1..7;
+
+ASSIGN
+	init(sender_actions) := 0;
+	init(receiver_actions) := 0;
+	init(thirdparty_actions) := 0;
+
+	init(take_turns) := 0;
+	init(line) := 1;
+
+
+	next(line) :=
+		case
+			(line=1 & !(sender_actions=2)) : {1}; -- skip
+			(line=1 & sender_actions=2) : {2};  -- P->T NRO
+			(line=2 & !(sender_actions=4)) : {2} ; -- skip
+			(line=2 & (sender_actions=4)) : {3} ;-- P->T: NRO
+			line=3 : {4} ;
+			(line=4 & !(receiver_actions=2)) : {4}; -- skip
+			(line=4 & (receiver_actions=2)) : {5} ;-- Q->T NRR
+			line=5 : {6} ;
+			line=6 : {7} ;
+			line=7 : {7} ;-- terminate
+		esac;
+
+	next(take_turns) :=
+		case
+			(line=3) : (take_turns);
+			(line=6) : (take_turns);
+			(line=7) : (take_turns);
+			(take_turns=0) : 1;
+			(take_turns=1) : 2;
+			(take_turns=2) : 0;
+		esac;
+
+	next(sender_actions) :=
+		case
+			(take_turns=0) : {0,1,2,3,4};
+			!(take_turns=0) : 0;
+		esac;
+
+	next(receiver_actions) :=
+		case
+			(take_turns=1) : {0,1,2};
+			!(take_turns=1) : 0;
+		esac;
+
+	next(thirdparty_actions) :=
+		case
+			(line=3) : {1};
+			(line=5) : {2};
+			(line=6) : {3};
+			(take_turns=2) : {0,1,2,3};
+			!(take_turns=2) : 0;
+		esac;
+DEFINE

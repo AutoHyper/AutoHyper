@@ -1,0 +1,182 @@
+-- //// TRIGGER 0
+-- // 0   trigger0 loops if (mask != 0) else go to line25
+-- // 1        - while (trigger0 == 0) do nothing
+-- // 2		- result = result OR mask
+-- // 3		- trigger0 = 0
+-- // 4		- maintrigger = matrigger + 1
+-- // 5 		- if maintrigger = 1, then trigger1 = 1
+-- // 6 		- if (mask != 0 and trigger0 = 0) back to line 1
+-- //// TRIGGER 1
+-- // 8	trigger1 loops if (mask != 0) else go to line25
+-- // 9		- while (trigger1 == 0) do nothing
+-- // 10		- result = result AND compliment(mask)
+-- // 11		- trigger1 = 0
+-- // 12   	- maintrigger = maintriger + 1
+-- // 13       - if maintrigger = 1, then trigger0 = 1
+-- // 14		- if (mask != 0 and trigger1 = 0) back to line 9
+-- //// MAIN TRIGGER
+-- // 16	maintrigger starts:
+-- // 17		- while (mask != 0) // Hm mm
+-- // 18		- maintrigger = 0
+-- // 19		- if (PIN & Mask = 0)
+-- // 20		- trigger0 = 1
+-- // 21		- else    trigger1 = 1
+-- // 22		while (maintrigger != 2) loop
+-- // 23		mask = mask / 2
+
+
+MODULE main
+VAR
+	PIN[0] : 0..1;
+    PIN[1] : 0..1;
+    PIN[2] : 0..1;
+
+    MASK[0] : 0..1;
+    MASK[1] : 0..1;
+    MASK[2] : 0..1;
+
+    RESULT[0] : 0..1;
+    RESULT[1] : 0..1;
+    RESULT[2] : 0..1;
+    
+	main_trigger: 0..2;
+	trigger_alpha: boolean;
+	trigger_beta: boolean;
+
+	alpha_line: 0..6;
+	beta_line: 0..6;
+	theta_line: 0..6;
+
+ASSIGN
+	-- when PIN is arbitrary, small PINs such as 001, is leaking information
+	init(PIN[2]) := {1,0}; init(PIN[1]) := {1,0}; init(PIN[0]) := {1,0};
+	init(MASK[2]) := 1; init(MASK[1]) := 0; init(MASK[0]) := 0;
+	-- the lines
+	init(alpha_line) := 0;
+	init(beta_line) := 0;
+	init(theta_line) := 0;
+
+	init(RESULT[0]) := 0; init(RESULT[1]) := 0; init(RESULT[2]) := 0;
+
+	init(main_trigger) := 0;
+	init(trigger_alpha) := FALSE;
+	init(trigger_beta) := FALSE;
+
+	next(PIN[2]) := PIN[2];
+	next(PIN[1]) := PIN[1];
+	next(PIN[0]) := PIN[0];
+
+	next(RESULT[2]) :=
+		case
+			(alpha_line=2 & (RESULT[2]=1 | (MASK[2]=1))) : 1;
+			(alpha_line=2 & !(RESULT[2]=1 | (MASK[2]=1))) : 0;
+			(beta_line=2 & (RESULT[2]=1 & (MASK[2]=0))) : 1;
+			(beta_line=2 & !(RESULT[2]=1 & (MASK[2]=0))) : 0;
+			TRUE: RESULT[2];
+		esac;
+	next(RESULT[1]) :=
+		case
+			(alpha_line=2 & (RESULT[1]=1 | (MASK[1]=1))) : 1;
+			(alpha_line=2 & !(RESULT[1]=1 | (MASK[1]=1))) : 0;
+			(beta_line=2 & (RESULT[1]=1 & (MASK[1]=0))) : 1;
+			(beta_line=2 & !(RESULT[1]=1 & (MASK[1]=0))) : 0;
+			TRUE: RESULT[1];
+		esac;
+	next(RESULT[0]) :=
+		case
+			(alpha_line=2 & (RESULT[0]=1 | (MASK[0]=1))) : 1;
+			(alpha_line=2 & !(RESULT[0]=1 | (MASK[0]=1))) : 0;
+			(beta_line=2 & (RESULT[0]=1 & (MASK[0]=0))) : 1;
+			(beta_line=2 & !(RESULT[0]=1 & (MASK[0]=0))) : 0;
+			TRUE: RESULT[0];
+		esac;
+
+	next(MASK[2]) :=
+		case
+			(theta_line=6 & MASK[2]=1) : 0;
+			TRUE: MASK[2];
+		esac;
+
+	next(MASK[1]) :=
+		case
+			(theta_line=6 & MASK[2]=1) : 1; -- divided by 2
+			(theta_line=6 & MASK[1]=1) : 0;
+			TRUE: MASK[1];
+		esac;
+
+	next(MASK[0]) :=
+		case
+			(theta_line=6 & MASK[1]=1) : 1; -- divided by 2
+			(theta_line=6 & MASK[0]=1) : 0;
+			TRUE: MASK[0];
+		esac;
+
+
+	next(main_trigger) :=
+		case
+			(theta_line=1) : 0;
+			(alpha_line=4 & main_trigger=0) : 1;
+			(alpha_line=4 & main_trigger=1) : 2;
+			(beta_line=4 & main_trigger=0) : 1;
+			(beta_line=4 & main_trigger=1) : 2;
+			TRUE : main_trigger;
+		esac;
+
+	next(trigger_alpha) :=
+		case
+			(theta_line=3) : TRUE;
+			(beta_line=5 & main_trigger=1): TRUE;
+			(alpha_line=3) : FALSE;
+			TRUE: trigger_alpha;
+		esac;
+
+	next(trigger_beta) :=
+		case
+			(theta_line=4) : TRUE;
+			(alpha_line=5 & main_trigger=1): TRUE;
+			(beta_line=3) : FALSE;
+			TRUE: trigger_beta;
+		esac;
+
+	next(alpha_line) :=
+		case
+			(alpha_line=0 &  (MASK[2]=0 & MASK[1]=0 & MASK[0]=0)) : {0}; -- END
+			(alpha_line=0 &  !(MASK[2]=0 & MASK[1]=0 & MASK[0]=0)) : {1};
+			(alpha_line=1 & (trigger_alpha = FALSE)) : {1};
+			(alpha_line=1 & (trigger_alpha = TRUE)) : {2};
+			(alpha_line=2) : {3}; -- result = result OR mask
+			(alpha_line=3) : {4}; -- trigger0 = 0
+			(alpha_line=4) : {5}; -- maintrigger = matrigger + 1
+			(alpha_line=5) : {6}; -- if maintrigger = 1, then trigger1 = 1
+			(alpha_line=6) : {0}; -- if (mask != 0 and trigger0 = 0) back to line 1
+		esac;
+
+	next(beta_line) :=
+		case
+			(beta_line=0 &  (MASK[2]=0 & MASK[1]=0 & MASK[0]=0)) : {0}; --END
+			(beta_line=0 &  !(MASK[2]=0 & MASK[1]=0 & MASK[0]=0)) : {1};
+			(beta_line=1 & (trigger_beta = FALSE)) : {1};
+			(beta_line=1 & (trigger_beta = TRUE)) : {2};
+			(beta_line=2) : {3}; -- result = result AND compliment(mask)
+			(beta_line=3) : {4}; -- trigger1 = 0
+			(beta_line=4) : {5}; -- maintrigger = maintriger + 1
+			(beta_line=5) : {6}; -- if maintrigger = 1, then trigger0 = 1
+			(beta_line=6) : {0}; -- if (mask != 0 and trigger1 = 0) back to line 1
+		esac;
+
+	next(theta_line) :=
+		case
+			(theta_line=0 &  (MASK[2]=0 & MASK[1]=0 & MASK[0]=0)) : {0};
+			(theta_line=0 &  !(MASK[2]=0 & MASK[1]=0 & MASK[0]=0)) : {1};
+			(theta_line=1) : {2}; -- maintrigger = 0
+			(theta_line=2 & ((PIN[2] = MASK[2]) & (PIN[1] = MASK[1]) & (PIN[0] = MASK[0]))) : {3}; -- if (PIN & Mask = 0)
+			(theta_line=3) : {5}; -- trigger_alpha = 1
+			(theta_line=2 & !((PIN[2] = MASK[2]) & (PIN[1] = MASK[1]) & (PIN[0] = MASK[0]))) : {4}; -- if !(PIN & Mask = 0)
+			(theta_line=4) : {5}; -- trigger_beta=1
+			(theta_line=5 & !(main_trigger=2)) : {5}; -- while (maintrigger != 2) loop
+			(theta_line=5 & (main_trigger=2)) : {6}; -- proceed
+			(theta_line=6) : {0}; --mask = mask / 2
+		esac;
+
+DEFINE
+		halt := (theta_line=0 & (MASK[2]=0 & MASK[1]=0 & MASK[0]=0));

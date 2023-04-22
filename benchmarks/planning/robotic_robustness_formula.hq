@@ -1,0 +1,21 @@
+exists A. forall B.
+
+    (F
+        (*GOAL*_A)
+    )
+&
+    (G
+        (
+            (*act=1*_A <-> *act=1*_B)
+            &
+            (*act=2*_A <-> *act=2*_B)
+            &
+            (*act=3*_A <-> *act=3*_B)
+            &
+            (*act=4*_A <-> *act=4*_B)
+        )
+        -> 
+        (F
+            (*GOAL*_A)
+        )
+    )

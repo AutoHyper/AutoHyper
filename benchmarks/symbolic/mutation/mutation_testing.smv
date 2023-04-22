@@ -1,0 +1,40 @@
+MODULE main
+VAR
+    mutation: boolean;
+    action: 0..2;
+    beverage: 0..2;
+    water: 0..3;
+
+
+ASSIGN
+    init(mutation) := {TRUE, FALSE};
+    next(mutation) := {TRUE, FALSE};
+
+    init(action) := 0;
+    next(action) := {0,1,2};
+
+    init(beverage) :=0;
+    next(beverage) :=
+        case
+            (action=1 & !(water=0)): 1;
+            TRUE: beverage;
+        esac;
+
+    init(water) :=2;
+    next(water) :=
+        case
+            (action=1 & !(water=0)): water - 1; -- make beverage
+            (mutation & water=0): 1;
+            (mutation & water=1): 2;
+            (mutation & water=2): 3;
+            (mutation & water=3): 3;
+            (!mutation & water=0): 2;
+            (!mutation & water=1): 3;
+            (!mutation & water=2): 3;
+            (!mutation & water=3): 3;
+            TRUE: water;
+        esac;
+
+DEFINE
+    NO_water := (action=1) & (water=0);
+    NO_output := (action!=1)  | ((action=1)&(beverage=0));

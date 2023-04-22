@@ -1,0 +1,144 @@
+--BAKERY ALGORITHM
+MODULE main
+VAR
+	p1_ticket: 0..3; -- the ticket number of p1
+	p2_ticket: 0..3; -- the ticket number of p2
+	p3_ticket: 0..3; -- the ticket number of p2
+	p4_ticket: 0..3; -- the ticket number of p2
+	p5_ticket: 0..3; -- the ticket number of p2
+
+	MAX_ticket: 0..3; -- let's say max ticket number is 3
+
+	p1_line: 0..4;
+	p2_line: 0..4;
+	p3_line: 0..4;
+	p4_line: 0..4;
+	p5_line: 0..4;
+
+ASSIGN
+	init(p1_ticket) := 0;
+	init(p2_ticket) := 0;
+	init(p3_ticket) := 0;
+	init(p4_ticket) := 0;
+	init(p5_ticket) := 0;
+
+
+
+	init(p1_line) := 0;
+	init(p2_line) := 0;
+	init(p3_line) := 0;
+	init(p4_line) := 0;
+	init(p5_line) := 0;
+
+	init(MAX_ticket):= 0;
+	next(MAX_ticket):=
+		case
+			(MAX_ticket=3): 0; --reset
+			(p1_line=1 | p2_line=1 | p3_line=1): MAX_ticket+1;
+			TRUE: MAX_ticket+1;
+		esac;
+
+	next(p1_line) :=
+		case
+			(p1_line=0) : {0,1};  -- stay, or proceed
+			(p1_line=1) : {2}; -- draw ticket
+			(p1_line=2 & !p1-TOKEN) : {2}; -- check TOKEN
+			(p1_line=2 & p1-TOKEN) : {3}; -- check TOKEN
+			(p1_line=3) : {4}; -- stay in critical section, or leave
+			(p1_line=4) : {0}; -- back to starting point
+			TRUE: p1_line;
+		esac;
+
+	next(p1_ticket):=
+		case
+			(MAX_ticket=3): 0; --reset
+			(p1_line=1): MAX_ticket+1;
+			TRUE: p1_ticket;
+		esac;
+
+
+	next(p2_line) :=
+		case
+			(p2_line=0) : {0,1};  -- stay, or proceed
+			(p2_line=1) : {1};
+			(p2_line=2 & !p2-TOKEN): {2}; -- check TOKEN
+			(p2_line=2 & p2-TOKEN): {3}; -- check TOKEN
+			(p2_line=3) : {4}; -- stay in critical section, or leave
+			(p2_line=4) : {0}; -- back to starting point
+			TRUE: p2_line;
+		esac;
+
+	next(p2_ticket):=
+		case
+			(MAX_ticket=3): 0; --reset
+			(p2_line=1): MAX_ticket+1;
+			TRUE: p2_ticket;
+		esac;
+
+
+	next(p3_line) :=
+		case
+			(p3_line=0) : {0,1};  -- stay, or proceed
+			(p3_line=1) : {2};
+			(p3_line=2 & !p3-TOKEN) : 2 ; -- check TOKEN
+			(p3_line=2 & p3-TOKEN) : 3 ; -- check TOKEN
+			(p3_line=3) : {4}; -- stay in critical section, or leave
+			(p3_line=4) : {0}; -- back to starting point
+			TRUE: p3_line;
+		esac;
+	next(p3_ticket):=
+		case
+			(MAX_ticket=3): 0; --reset
+			(p3_line=1): MAX_ticket+1;
+			TRUE: p3_ticket;
+		esac;
+
+
+	next(p4_line) :=
+		case
+			(p4_line=0) : {0,1};  -- stay, or proceed
+			(p4_line=1) : {2};
+			(p4_line=2 & !p4-TOKEN) : 2 ; -- check TOKEN
+			(p4_line=2 & p4-TOKEN) : 3 ; -- check TOKEN
+			(p4_line=3) : {4}; -- stay in critical section, or leave
+			(p4_line=4) : {0}; -- back to starting point
+			TRUE: p4_line;
+		esac;
+	next(p4_ticket):=
+		case
+			(MAX_ticket=3): 0; --reset
+			(p4_line=1): MAX_ticket+1;
+			TRUE: p4_ticket;
+		esac;
+
+
+	next(p5_line) :=
+		case
+			(p5_line=0) : {0};  -- stay, or proceed
+			(p5_line=1) : {2};
+			(p5_line=2 & !p5-TOKEN) : 2 ; -- check TOKEN
+			(p5_line=2 & p5-TOKEN) : 3 ; -- check TOKEN
+			(p5_line=3) : {4}; -- stay in critical section, or leave
+			(p5_line=4) : {0}; -- back to starting point
+			TRUE: p5_line;
+		esac;
+
+
+	next(p5_ticket):=
+		case
+			(MAX_ticket=3): 0; --reset
+			(p5_line=1): MAX_ticket+1;
+			TRUE: p5_ticket;
+		esac;
+
+DEFINE
+	p1-TOKEN := ((p1_ticket <= p2_ticket) & (p1_ticket <= p3_ticket)
+										& (p1_ticket <= p4_ticket)& (p1_ticket <= p5_ticket));
+	p2-TOKEN := (((p2_ticket <= p1_ticket) & (p2_ticket <= p3_ticket)
+										& (p2_ticket <= p4_ticket) &  (p2_ticket <= p5_ticket))) | !p1-TOKEN;
+	p3-TOKEN := (((p3_ticket <= p1_ticket) & (p3_ticket <= p2_ticket)
+										& (p3_ticket <= p4_ticket) & (p3_ticket <= p5_ticket))) | !p1-TOKEN & !p2-TOKEN;
+	p4-TOKEN := (((p4_ticket <= p1_ticket) & (p4_ticket <= p2_ticket)
+										& (p4_ticket <= p3_ticket) & (p4_ticket <= p5_ticket))) | !p1-TOKEN & !p2-TOKEN & !p3-TOKEN;
+	p5-TOKEN := (((p5_ticket <= p1_ticket) & (p5_ticket <= p2_ticket)
+										& (p5_ticket <= p3_ticket) & (p5_ticket <= p4_ticket))) | !p1-TOKEN & !p2-TOKEN & !p3-TOKEN & !p4-TOKEN;
