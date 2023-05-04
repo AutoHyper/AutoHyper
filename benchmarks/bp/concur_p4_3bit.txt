@@ -1,0 +1,22 @@
+dom: [(h 3), (l 3), (o 3)]
+WHILE(t) {  
+    [
+        READ(h);
+
+        NONDET THEN {
+            IF ((# h 0)) THEN {
+                o := (x f 3)
+            } ELSE {
+                o := (x t 3)
+            }
+        } ELSE {
+            IF ((# h 0)) THEN {
+                o := (x t 3)
+            } ELSE {
+                o := (x f 3)
+            }
+        }
+    ]
+
+    
+}

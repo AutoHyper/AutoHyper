@@ -1,0 +1,14 @@
+dom: [(o 1), (l 1), (h 1)]
+[
+    o := (x t 1);
+    WHILE(t) {
+        [
+            READ(l);
+            NONDET THEN {
+                o := l
+            } ELSE {
+                o := (! l)
+            }
+        ]
+    }
+]

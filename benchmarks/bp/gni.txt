@@ -1,0 +1,3 @@
+forall A. forall B. exists C.
+
+(G ({h_0}_A <-> {h_0}_C)) & (G({l_0}_B <-> {l_0}_C)) & (G({o_0}_B <-> {o_0}_C))
