@@ -19,7 +19,7 @@ module ModelChecking
 
 open FsOmegaLib.LTL
 open FsOmegaLib.NBA
-open FsOmegaLib.Conversion
+open FsOmegaLib.Operations
 
 open Util
 open RunConfiguration
@@ -53,7 +53,7 @@ type Mode =
     | COMP 
     | INCL of InclusionChecker
 
-let private inclusionTest (config : Configuration)  (tslist : list<TransitionSystem<'Tstate, 'L>>) (aut : NBA<int, 'L * int>) (inclusionChecker : InclusionChecker) timeout = 
+let private inclusionTest (config : Configuration)  (tslist : list<TransitionSystem<'Tstate, 'L>>) (aut : NBA<int, 'L * int>) (inclusionChecker : InclusionChecker) = 
 
     // Map each index to the APs that are used by aut at that position
     let automatonAps = 
@@ -80,7 +80,7 @@ let private inclusionTest (config : Configuration)  (tslist : list<TransitionSys
         | SPOT -> 
             if config.SolverConfig.AutfiltPath |> Option.isNone then 
                 raise <| AnalysisException "Required spot's autfilt for inclusion check, but autfilt is not given"
-            FsOmegaLib.Conversion.AutomataChecks.checkContainment Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value timeout product aut
+            FsOmegaLib.Operations.AutomataChecks.isContained Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value product aut
             
         | RABIT -> 
             let nba1, nba2 = NBA.bringPairToSameAPs product aut
@@ -88,29 +88,29 @@ let private inclusionTest (config : Configuration)  (tslist : list<TransitionSys
             let enba2 = ExplicitAutomaton.ExplicitNBA.convertFromSymbolicNBA nba2
 
             if config.SolverConfig.RabitJarPath |> Option.isNone then 
-                raise <| AnalysisException "Required RABIT for inclusion check, but RABIT is not given"
-            ExplicitAutomaton.AutomataChecks.checkNBAContainmentRabit Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.RabitJarPath.Value timeout enba1 enba2
+                raise <| AnalysisException "Required RABIT for inclusion check, but no path to RABIT is given"
+            ExplicitAutomaton.AutomataChecks.checkNBAContainmentRabit Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.RabitJarPath.Value enba1 enba2
         | BAIT -> 
             let nba1, nba2 = NBA.bringPairToSameAPs product aut
             let enba1 = ExplicitAutomaton.ExplicitNBA.convertFromSymbolicNBA nba1
             let enba2 = ExplicitAutomaton.ExplicitNBA.convertFromSymbolicNBA nba2
 
             if config.SolverConfig.BaitJarPath |> Option.isNone then 
-                raise <| AnalysisException "Required BAIT for inclusion check, but BAIT is not given"
-            ExplicitAutomaton.AutomataChecks.checkNBAContainmentBait Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.BaitJarPath.Value timeout enba1 enba2
+                raise <| AnalysisException "Required BAIT for inclusion check, but no path to BAIT is given"
+            ExplicitAutomaton.AutomataChecks.checkNBAContainmentBait Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.BaitJarPath.Value enba1 enba2
         | FORKLIFT -> 
             let nba1, nba2 = NBA.bringPairToSameAPs product aut
             let enba1 = ExplicitAutomaton.ExplicitNBA.convertFromSymbolicNBA nba1
             let enba2 = ExplicitAutomaton.ExplicitNBA.convertFromSymbolicNBA nba2
 
             if config.SolverConfig.ForkliftJarPath |> Option.isNone then 
-                raise <| AnalysisException "Required FORKLIFT for inclusion check, but FORKLIFT is not given"
-            ExplicitAutomaton.AutomataChecks.checkNBAContainmentForklift Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.ForkliftJarPath.Value timeout enba1 enba2
+                raise <| AnalysisException "Required FORKLIFT for inclusion check, but no path to FORKLIFT is given"
+            ExplicitAutomaton.AutomataChecks.checkNBAContainmentForklift Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.ForkliftJarPath.Value enba1 enba2
                 
     swInclusion.Stop()
     res
 
-let rec private modelCheckComplementationRec (config : Configuration)  (tslist : list<TransitionSystem<'Tstate, 'L>>) (qf : list<int>) (isNegated : bool) (aut : NBA<int, 'L * int>) m timeout = 
+let rec private modelCheckComplementationRec (config : Configuration)  (tslist : list<TransitionSystem<'Tstate, 'L>>) (qf : list<int>) (isNegated : bool) (aut : NBA<int, 'L * int>) m = 
     assert (tslist.Length = List.sum qf)
 
     if qf.Length = 0 then
@@ -122,10 +122,9 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
             if config.SolverConfig.AutfiltPath |> Option.isNone then 
                 raise <| AnalysisException "Required spot's autfilt for emptiness check, but autfilt is not given"
 
-            match FsOmegaLib.Conversion.AutomataChecks.checkEmptiness Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value timeout aut with 
+            match FsOmegaLib.Operations.AutomataChecks.isEmpty Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value aut with 
             | Success x -> not x 
             | Fail err -> raise <| AnalysisException err 
-            | Timeout -> raise <| TimeoutException
 
         swEmptiness.Stop()
         
@@ -146,10 +145,9 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
             
         swInclusion.Start()
         let res = 
-            match inclusionTest config tslist aut inclusionChecker timeout with 
+            match inclusionTest config tslist aut inclusionChecker with 
             | Success x -> x 
             | Fail err -> raise <| AnalysisException err 
-            | Timeout -> raise TimeoutException
             
         swInclusion.Stop()
 
@@ -168,10 +166,9 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
                     if config.SolverConfig.AutfiltPath |> Option.isNone then 
                         raise <| AnalysisException "Required spot's autfilt for NBA complementation, but autfilt is not given"
 
-                    match FsOmegaLib.Conversion.AutomataOperations.complementToNBA Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value LOW timeout aut with 
+                    match FsOmegaLib.Operations.AutomataOperations.complementToNBA Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value LOW aut with 
                     | Success x -> x 
                     | Fail err -> raise <| AnalysisException err 
-                    | Timeout -> raise <| TimeoutException
 
                 swComplement.Stop()
                 r
@@ -193,9 +190,9 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
 
         let isNegated = if lastQuantifierType = FORALL then true else false
 
-        modelCheckComplementationRec config tslist[0..projStartIndex-1] qf[0..qf.Length-2] isNegated nextAut m timeout
+        modelCheckComplementationRec config tslist[0..projStartIndex-1] qf[0..qf.Length-2] isNegated nextAut m
        
-let private modelCheckInit (config : Configuration)  (tslist : list<TransitionSystem<'T, 'L>>) (qfPrefix : list<int>) (ltlMatrix : LTL<'L * int>) (m : Mode) timeout = 
+let private modelCheckInit (config : Configuration)  (tslist : list<TransitionSystem<'T, 'L>>) (qfPrefix : list<int>) (ltlMatrix : LTL<'L * int>) (m : Mode) = 
     assert (tslist.Length = List.sum qfPrefix)
     
     assert(qfPrefix.Length >= 2)
@@ -220,19 +217,18 @@ let private modelCheckInit (config : Configuration)  (tslist : list<TransitionSy
         if config.SolverConfig.Ltl2tgbaPath |> Option.isNone then 
             raise <| AnalysisException "Required spot's ltl2tgba, but ltl2tgba is not given"
 
-        match FsOmegaLib.Conversion.LTLConversion.convertLTLtoNBA Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.Ltl2tgbaPath.Value timeout f with 
+        match FsOmegaLib.Operations.LTLConversion.convertLTLtoNBA Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.Ltl2tgbaPath.Value f with 
         | Success aut -> aut 
-        | Fail err -> raise <| AnalysisException err 
-        | Timeout -> raise TimeoutException
+        | Fail err -> raise <| AnalysisException err
         
     swLTLtoNBA.Stop()
 
     config.Logger [THREE; FOUR] "Done\n"
     
-    modelCheckComplementationRec config tslist qfPrefix isNegated currentNBA m timeout
+    modelCheckComplementationRec config tslist qfPrefix isNegated currentNBA m
     
 
-let private modelCheckAlternationFree (config : Configuration) (tslist : list<TransitionSystem<'T, 'L>>) (prop : HyperLTL<'L>) timeout =  
+let private modelCheckAlternationFree (config : Configuration) (tslist : list<TransitionSystem<'T, 'L>>) (prop : HyperLTL<'L>) =  
     config.Logger [THREE; FOUR] "Verify alternation free formula\n"
     assert(extractBlocks prop.QuantifierPrefix |> List.length = 1)
 
@@ -249,10 +245,9 @@ let private modelCheckAlternationFree (config : Configuration) (tslist : list<Tr
     
     swLTLtoNBA.Start()
     let nba = 
-        match FsOmegaLib.Conversion.LTLConversion.convertLTLtoNBA Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.Ltl2tgbaPath.Value timeout matrix with 
+        match FsOmegaLib.Operations.LTLConversion.convertLTLtoNBA Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.Ltl2tgbaPath.Value matrix with 
         | Success aut -> aut 
-        | Fail err -> raise <| AnalysisException err 
-        | Timeout -> raise TimeoutException
+        | Fail err -> raise <| AnalysisException err
 
     swLTLtoNBA.Stop()
 
@@ -273,10 +268,9 @@ let private modelCheckAlternationFree (config : Configuration) (tslist : list<Tr
             raise <| AnalysisException "Required spot's autfilt for emptiness check, but autfilt is not given"
 
         let isNotEmpty = 
-            match FsOmegaLib.Conversion.AutomataChecks.checkEmptiness Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value timeout productAut with 
+            match FsOmegaLib.Operations.AutomataChecks.isEmpty Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value productAut with 
             | Success res -> not res 
-            | Fail err -> raise <| AnalysisException err 
-            | Timeout -> raise TimeoutException
+            | Fail err -> raise <| AnalysisException err
 
         swEmptiness.Stop()
 
@@ -288,7 +282,7 @@ let private modelCheckAlternationFree (config : Configuration) (tslist : list<Tr
     else 
         isNotEmpty
     
-let modelCheck (config : Configuration) (tslist : list<TransitionSystem<'T, 'L>>) (prop : HyperLTL<'L>) m timeout = 
+let modelCheck (config : Configuration) (tslist : list<TransitionSystem<'T, 'L>>) (prop : HyperLTL<'L>) m = 
     let sw = System.Diagnostics.Stopwatch()
     sw.Start()
 
@@ -323,7 +317,7 @@ let modelCheck (config : Configuration) (tslist : list<TransitionSystem<'T, 'L>>
     let res = 
         if List.length blockPrefix = 1 then 
             // The formula is alternation-free, use a direct product construction
-            modelCheckAlternationFree config tslist prop timeout
+            modelCheckAlternationFree config tslist prop
         else 
             // The formula contains a quantifier alternation.
             // If the outermost quantifier is \exists, we negate everything so we can always work with a property starting with a \forall quantifier
@@ -336,7 +330,7 @@ let modelCheck (config : Configuration) (tslist : list<TransitionSystem<'T, 'L>>
                 else 
                     prop.LTLMatrix
 
-            let res = modelCheckInit config tslist blockPrefix matrix m timeout
+            let res = modelCheckInit config tslist blockPrefix matrix m
 
             if shouldNegate then 
                 not res

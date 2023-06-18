@@ -21,10 +21,11 @@ open System
 open System.IO
 
 open Util
+open RunConfiguration
 open FsOmegaLib.SAT
 open FsOmegaLib.NBA
 
-open FsOmegaLib.Conversion
+open FsOmegaLib.Operations
 
 type ExplicitNBA<'T, 'L when 'T: comparison> = 
     {
@@ -146,7 +147,10 @@ module ExplicitNBA =
         }
 
 module AutomataChecks = 
-    let checkNBAContainmentBait debug mainPath baitPath timeout (enba1 : ExplicitNBA<int, 'L>) (enba2 : ExplicitNBA<int, 'L>)  = 
+
+    exception private AutomatonCheckException of String
+
+    let checkNBAContainmentBait debug mainPath baitPath (enba1 : ExplicitNBA<int, 'L>) (enba2 : ExplicitNBA<int, 'L>)  = 
         try 
             assert(enba1.Alphabet = enba2.Alphabet)
 
@@ -165,26 +169,30 @@ module AutomataChecks =
             File.WriteAllText(path2, s2)
 
             let arg = "-jar " + baitPath + " -a " + path1 + " -b " + path2
-            let res = Util.systemCall "java" arg timeout
+            let res = Util.SubprocessUtil.executeSubprocess "java" arg
 
             match res with 
-                | SystemCallOutcome res -> 
-                    if res.Contains "Inclusion holds: true" then 
-                        FsOmegaLib.Conversion.AutomataConversionResult.Success true
-                    elif res.Contains "Inclusion holds: false" then 
-                        FsOmegaLib.Conversion.AutomataConversionResult.Success false
-                    else 
-                        FsOmegaLib.Conversion.AutomataConversionResult.Fail ("Unexpected Output by BAIT: " + res)
-                | SystemCallTimeout -> 
-                    FsOmegaLib.Conversion.AutomataConversionResult.Timeout
-                | SystemCallError err -> 
-                    FsOmegaLib.Conversion.AutomataConversionResult.Fail ("Error by BAIT: " + err)
+            | {ExitCode = 0; Stderr = ""; Stdout = c} | {ExitCode = 1; Stderr = ""; Stdout = c} -> 
+                if c.Contains "Inclusion holds: true" then 
+                    FsOmegaLib.Operations.AutomataOperationResult.Success true
+                elif c.Contains "Inclusion holds: false" then 
+                    FsOmegaLib.Operations.AutomataOperationResult.Success false
+                else 
+                    FsOmegaLib.Operations.AutomataOperationResult.Fail ("Unexpected Output by BAIT: " + c)
+            | {ExitCode = exitCode; Stderr = stderr}  -> 
+                if exitCode <> 0 && exitCode <> 1 then 
+                    raise <| AutomatonCheckException $"Unexpected exit code by BAIT: %i{exitCode}"
+                else   
+                    raise <| AutomatonCheckException $"Error by BAIT: %s{stderr}"
+
         with 
         | _ when debug -> reraise() 
+        | AutomatonCheckException err -> 
+            Fail (err)
         | e -> 
             Fail $"%s{e.Message}"
 
-    let checkNBAContainmentRabit (debug: bool) mainPath rabitPath timeout (enba1 : ExplicitNBA<'T, 'L>) (enba2 : ExplicitNBA<'T, 'L>)  = 
+    let checkNBAContainmentRabit (debug: bool) mainPath rabitPath (enba1 : ExplicitNBA<'T, 'L>) (enba2 : ExplicitNBA<'T, 'L>)  = 
         try
             assert(enba1.Alphabet = enba2.Alphabet)
 
@@ -204,26 +212,30 @@ module AutomataChecks =
 
             let arg = "-jar " + rabitPath + " " + path1 + " " + path2 + " -fast"
 
-            let res = Util.systemCall "java" arg timeout
+            let res = Util.SubprocessUtil.executeSubprocess "java" arg
 
             match res with 
-                | SystemCallOutcome res -> 
-                    if res.Contains "Not included." then 
-                        FsOmegaLib.Conversion.AutomataConversionResult.Success false
-                    elif res.Contains "Included." then 
-                        FsOmegaLib.Conversion.AutomataConversionResult.Success true
-                    else 
-                        FsOmegaLib.Conversion.AutomataConversionResult.Fail ("Unexpected Output by RABIT: " + res)
-                | SystemCallTimeout -> 
-                    FsOmegaLib.Conversion.AutomataConversionResult.Timeout
-                | SystemCallError err -> 
-                    FsOmegaLib.Conversion.AutomataConversionResult.Fail ("Error by RABIT: " + err)
+            | {ExitCode = 0; Stderr = ""; Stdout = c} | {ExitCode = 1; Stderr = ""; Stdout = c} -> 
+                if c.Contains "Not included." then 
+                    FsOmegaLib.Operations.AutomataOperationResult.Success false
+                elif c.Contains "Included." then 
+                    FsOmegaLib.Operations.AutomataOperationResult.Success true
+                else 
+                    FsOmegaLib.Operations.AutomataOperationResult.Fail ("Unexpected Output by RABIT: " + c)
+            | {ExitCode = exitCode; Stderr = stderr}  -> 
+                if exitCode <> 0 && exitCode <> 1 then 
+                    raise <| AutomatonCheckException $"Unexpected exit code by RABIT: %i{exitCode}"
+                else   
+                    raise <| AutomatonCheckException $"Error by RABIT: %s{stderr}"
+
         with 
         | _ when debug -> reraise() 
+        | AutomatonCheckException err -> 
+            Fail (err)
         | e -> 
             Fail $"%s{e.Message}"
 
-    let checkNBAContainmentForklift debug mainPath forkliftPath timeout (enba1 : ExplicitNBA<'T, 'L>) (enba2 : ExplicitNBA<'T, 'L>)  = 
+    let checkNBAContainmentForklift debug mainPath forkliftPath (enba1 : ExplicitNBA<'T, 'L>) (enba2 : ExplicitNBA<'T, 'L>)  = 
         try 
             assert(enba1.Alphabet = enba2.Alphabet)
 
@@ -242,22 +254,25 @@ module AutomataChecks =
             File.WriteAllText(path2, s2)
 
             let arg = "-jar " + forkliftPath + " " + path1 + " " + path2
-            let res = Util.systemCall "java" arg timeout
+            let res = Util.SubprocessUtil.executeSubprocess "java" arg
 
             match res with 
-                | SystemCallOutcome res -> 
-                    if res.Contains "OUTPUT:false" then 
-                        FsOmegaLib.Conversion.AutomataConversionResult.Success false
-                    elif res.Contains "OUTPUT:true" then 
-                        FsOmegaLib.Conversion.AutomataConversionResult.Success true
-                    else 
-                        FsOmegaLib.Conversion.AutomataConversionResult.Fail ("Unexpected Output by FORKLIFT: " + res)
-                | SystemCallTimeout -> 
-                    FsOmegaLib.Conversion.AutomataConversionResult.Timeout
-
-                | SystemCallError err -> 
-                    FsOmegaLib.Conversion.AutomataConversionResult.Fail ("Error by FORKLIFT: " + err)    
+            | {ExitCode = 0; Stderr = ""; Stdout = c} | {ExitCode = 1; Stderr = ""; Stdout = c} -> 
+                if c.Contains "OUTPUT:false" then 
+                    FsOmegaLib.Operations.AutomataOperationResult.Success false
+                elif c.Contains "OUTPUT:true" then 
+                    FsOmegaLib.Operations.AutomataOperationResult.Success true
+                else 
+                    FsOmegaLib.Operations.AutomataOperationResult.Fail ("Unexpected Output by FORKLIFT: " + c)
+            | {ExitCode = exitCode; Stderr = stderr}  -> 
+                if exitCode <> 0 && exitCode <> 1 then 
+                    raise <| AutomatonCheckException $"Unexpected exit code by FORKLIFT: %i{exitCode}"
+                else   
+                    raise <| AutomatonCheckException $"Error by FORKLIFT: %s{stderr}"
+   
         with 
         | _ when debug -> reraise() 
+        | AutomatonCheckException err -> 
+            Fail (err)
         | e -> 
             Fail $"%s{e.Message}"

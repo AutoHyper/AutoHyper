@@ -100,12 +100,12 @@ let private run (args: array<string>) =
         | None -> 
             raise <| AnalysisException "Must specify an exeuction mode"
         | Some (ExplictSystem (systemPaths, propPath)) -> 
-            explictSystemVerification config systemPaths propPath mode cmdArgs.Timeout
+            explictSystemVerification config systemPaths propPath mode
         | Some (BooleanProgram (systemPaths, propPath)) -> 
-            booleanProgramVerification config systemPaths propPath mode cmdArgs.Timeout
+            booleanProgramVerification config systemPaths propPath mode
 
         | Some (NusmvSystem (systemPaths, propPath)) -> 
-            nuSMVSystemVerification config systemPaths propPath mode cmdArgs.Timeout
+            nuSMVSystemVerification config systemPaths propPath mode
 
     swtotal.Stop()
     config.Logger [TWO; THREE; FOUR] $"Time %i{swtotal.ElapsedMilliseconds}ms (~=%.2f{double(swtotal.ElapsedMilliseconds) / 1000.0}s)\n"

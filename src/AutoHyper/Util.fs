@@ -97,37 +97,36 @@ module ParserUtil =
                 (pint32 .>> pstring "}")
                 (fun x _ y  -> (x, y))
 
-type SystemCallResult = 
-    | SystemCallOutcome of String
-    | SystemCallError of String
-    | SystemCallTimeout
 
-let systemCall cmd arg timeout =
-    let p = new System.Diagnostics.Process();
-    p.StartInfo.RedirectStandardOutput <- true
-    p.StartInfo.RedirectStandardError <- true
-    p.StartInfo.UseShellExecute <- false
-    p.StartInfo.FileName <- cmd
-    p.StartInfo.Arguments <- arg
-    p.Start() |> ignore 
+module SubprocessUtil = 
+    type SubprocessResult = 
+        {
+            Stdout : String 
+            Stderr : String 
+            ExitCode : int
+        }
 
-    let a = 
-        match timeout with 
-            | Option.None -> 
-                true
-            | Some t -> 
-                p.WaitForExit(t :> int)
+    let executeSubprocess (cmd: string) (arg: string) = 
+        let psi =
+            System.Diagnostics.ProcessStartInfo(cmd, arg)
 
-    if a then 
-        let err = p.StandardError.ReadToEnd() 
+        psi.UseShellExecute <- false
+        psi.RedirectStandardOutput <- true
+        psi.RedirectStandardError <- true
+        psi.CreateNoWindow <- true
+        let p = System.Diagnostics.Process.Start(psi)
+        let output = System.Text.StringBuilder()
+        let error = System.Text.StringBuilder()
+        p.OutputDataReceived.Add(fun args -> output.Append(args.Data) |> ignore)
+        p.ErrorDataReceived.Add(fun args -> error.Append(args.Data) |> ignore)
+        p.BeginErrorReadLine()
+        p.BeginOutputReadLine()
+        p.WaitForExit()
 
-        if err <> "" then 
-            SystemCallError err
-        else 
-            let res = p.StandardOutput.ReadToEnd()
-            p.Kill true
-            SystemCallOutcome res
-    else 
-        p.Kill true
-        SystemCallTimeout
-        
+        {
+            SubprocessResult.Stdout = output.ToString();
+            Stderr = error.ToString()
+            ExitCode = p.ExitCode
+        }
+
+      

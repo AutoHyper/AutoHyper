@@ -33,7 +33,6 @@ type CommandLineArguments =
     {
         ExecMode : option<ExecutionMode>
         Mode : option<ModelChecking.Mode>
-        Timeout : option<int>
         Verbosity : RunConfiguration.VerbosityLevel
     }
 
@@ -41,7 +40,6 @@ type CommandLineArguments =
         {
             ExecMode = None
             Mode = Option.None
-            Timeout = Option.None
             Verbosity = ZERO
         }
 
@@ -127,17 +125,6 @@ let parseCommandLineArguments (args : list<String>) =
                                         | "incl_forklift" -> parseArgumentsRec ys { opt with Mode = Some (INCL FORKLIFT) }
                                         | _ -> Result.Error ("Unsupported Mode: " + y)
                                 with _ -> Result.Error ("Unsupported Mode: " + y)
-                    | "-t" -> 
-                        match xs with 
-                            | [] -> 
-                                Result.Error "Option -t must be followed by an argument" 
-                            | y::ys -> 
-                                try     
-                                    let vl = System.Int32.Parse y
-                                    parseArgumentsRec ys { opt with Timeout = Some vl }
-                                with _ -> Result.Error ("Unsupported timeout option: " + y)
-
-                              
                     | "-v" -> 
                         match xs with 
                             | [] -> 
@@ -170,13 +157,10 @@ let parseCommandLineArguments (args : list<String>) =
                         printfn "  where <systemFile(s)> is a (list of) files to systems and <propFile> the file containing the specification."
                         printfn "  In case only a single systems is given, it will be used for all quantifier. Otherwise the number of systems must match the quantifier prefix in the specification."
                         printfn ""
-                        printfn "  -m               specifies the mode to be used by AutoHyper. Options are comp, incl_spot, incl_rabit, incl_bait, incl_forklift. "
+                        printfn "  -m               specifies the mode to be used by AutoHyper. Options are 'comp', 'incl_spot', 'incl_rabit', 'incl_bait', 'incl_forklift'. "
                         printfn "                   If left unspecified AutoHyper uses incl_spot. "
                         printfn ""
-                        printfn "  -t               specifies the timeout to be used by AutoHyper in ms. "
-                        printfn "                   If left unspecified AutoHyper uses no timeout. "
-                        printfn ""
-                        printfn "  -v               specifies the verbosity to be used by AutoHyper. Options are 0, 1, 2, 3, 4."
+                        printfn "  -v               specifies the verbosity to be used by AutoHyper. Options are '0', '1', '2', '3', '4'."
                         printfn "                   If left unspecified AutoHyper uses 0. "
                         printfn ""
                         printfn "  --version        prints the current version of AutoHyper."

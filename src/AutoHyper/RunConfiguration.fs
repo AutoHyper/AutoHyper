@@ -20,8 +20,6 @@ module RunConfiguration
 open System
 
 exception AnalysisException of String 
-exception TimeoutException 
-
 
 /// Records the run configuration (the location) of each supported automaton tool
 type SolverConfiguration = 

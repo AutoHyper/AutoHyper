@@ -30,23 +30,20 @@ open ModelChecking
 open NuSMV
 open BooleanPrograms
 
-let private verify config (tslist : list<TransitionSystem<int, String>>) (hyperltl : HyperLTL<String>) (m : Mode) timeout = 
-        try 
-            let res, t = ModelChecking.modelCheck config tslist hyperltl m timeout
+let private verify config (tslist : list<TransitionSystem<int, String>>) (hyperltl : HyperLTL<String>) (m : Mode) = 
+    let res, t = ModelChecking.modelCheck config tslist hyperltl m
 
-            if res then 
-                config.Logger [ZERO; ONE] (sprintf "SAT\n")
+    if res then 
+        config.Logger [ZERO; ONE] (sprintf "SAT\n")
 
-                config.Logger [TWO; THREE; FOUR] $"=========================\nSAT\n=========================\n"
-                config.Logger [TWO; THREE; FOUR] $"Time: %i{t.TotalTime}\n"
-            else
-                config.Logger [ZERO; ONE] (sprintf "UNSAT\n")
+        config.Logger [TWO; THREE; FOUR] $"=========================\nSAT\n=========================\n"
+        config.Logger [TWO; THREE; FOUR] $"Time: %i{t.TotalTime}\n"
+    else
+        config.Logger [ZERO; ONE] (sprintf "UNSAT\n")
 
-                config.Logger [TWO; THREE; FOUR] $"=========================\nUNSAT\n=========================\n"
-                config.Logger [TWO; THREE; FOUR] $"Time: %i{t.TotalTime}\n"
-        with 
-        | TimeoutException -> 
-            config.Logger [ZERO; ONE;TWO; THREE; FOUR] (sprintf "TIMEOUT\n")
+        config.Logger [TWO; THREE; FOUR] $"=========================\nUNSAT\n=========================\n"
+        config.Logger [TWO; THREE; FOUR] $"Time: %i{t.TotalTime}\n"
+
 
 let explictSystemVerification (config : Configuration) systemPaths propPath m  = 
     let sw: System.Diagnostics.Stopwatch = System.Diagnostics.Stopwatch()
