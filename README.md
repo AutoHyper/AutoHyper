@@ -22,7 +22,7 @@ Support for symbolic systems includes a fragment of the [NuSMV specification lan
 
 We require the following dependencies:
 
-- [.NET 7 SDK](https://dotnet.microsoft.com/en-us/download) (tested with version 7.0.102)
+- [.NET 7 SDK](https://dotnet.microsoft.com/en-us/download) (tested with version 7.0.302)
 - [spot](https://spot.lrde.epita.fr/)
 
 Install the .NET 7 SDK (see [here](https://dotnet.microsoft.com/en-us/download) for details) and make sure it is installed correctly by running `dotnet --version`.
@@ -34,7 +34,7 @@ To use AutoHyper you need to provide it with the *absolute* path to spot (see de
 
 Run 
 
-```
+```shell
 git clone https://github.com/AutoHyper/autohyper
 cd autohyper
 git submodule init
@@ -72,7 +72,7 @@ We already provide a template file `app/paths.json` that *needs to be modified*.
 After having built spot, paste the absolute path to the *autfilt* and *ltl2tgba* executables to the `paths.json` file. 
 For example, if `/usr/bin/autfilt` and `/usr/bin/ltl2tgba` are the *autfilt* and *ltl2tgba* executables, the content of `app/paths.json` should be
 
-```
+```json
 {
     "autfilt":"/usr/bin/autfilt",
     "ltl2tgba":"/usr/bin/ltl2tgba"
@@ -96,7 +96,7 @@ These tools are optional and will only be used when the appropriate mode is set 
 Rabit, bait, and forklift are written in Java and AutoHyper requires the absolute path to the `.jar` file of each solver. 
 The content of the `paths.json` is then 
 
-```
+```json
 {
     "autfilt":"<...>/autfilt",
     "ltl2tgba":"<...>/ltl2tgba",
@@ -106,7 +106,7 @@ The content of the `paths.json` is then
 }
 ```
 
-You can also only give some of the solver paths.
+You can also only provide only some of the solver paths.
 If you use a mode but have not specified a path to the corresponding solver, AutoHyper will raise an error.
 
 
@@ -153,10 +153,9 @@ Additional (and optional) command-line options include
     - `incl_forklift` uses FORKLIFT's inclusion check (requires a working copy of forklift, see Section [])
     If not set, AutoHyper use `incl_spot` as default.
 - `-v` sets the verbosity. Available options are `0`, `1`, `2`, `3`, `4`.
-    If set to `0` only the result (`SAT`, `UNSAT`, `TIMEOUT`) and potential error messages are printed. 
+    If set to `0` only the result (`SAT`, `UNSAT`) and potential error messages are printed. 
     The higher the verbosity, the more information is printed. 
     The default level is set to `0`.
-- `-t` sets the timeout in milliseconds. If not set, we use no timeout.
 - `--version` displays the AutoHyper version.
 - `--license` displays information about the license of AutoHyper.
 - `--help` displays a help message.
@@ -192,7 +191,7 @@ The quantifier prefix `<qfPrefix>` can be one of the following:
 - Universal quantification `forall <VAR>. <qfPrefix>`
 - Existential quantification `exists <VAR>. <qfPrefix>`
 
-Here `<VAR>` is a trace variable, which is any non-empty sequence consisting only of letters. 
+Here `<VAR>` is a trace variable, which is any non-empty sequence consisting only of letters and digits (starting with a letter). 
 
 For examples of HyperLTL properties (with the atomic propositions used in either case), see the following sections. 
 
@@ -202,15 +201,16 @@ When using `-e`, AutoHyper expects an explicit-state transition system.
 An explicit-state system has the form 
 
 ```
-aps "<AP>" ... "<AP>"
-init <stateID> ... <stateID> 
+AP: "<AP>" ... "<AP>"
+Init: <stateID> ... <stateID> 
 --BODY-- 
 <stateDefinition>
 ...
 <stateDefinition>
+--END--
 ```
 
-Here, `<AP>` is an atomic proposition. This can be any string not containing `"`. Note that all atomic propositions are escaped.
+Here, `<AP>` is an atomic proposition. This can be any string not containing `"`. Note that all atomic propositions are escaped in '"'.
 `<stateID>` is any natural number specifying a state. 
 The header specifies which states are initial (there must be at least one initial state) and which APs are used in the system.
 
@@ -221,29 +221,30 @@ State: <stateID> <apEval>
 ```
 
 It specifies which state we are defining and the evaluation of the atomic propositions in that state. 
-The `<apEval>` has the form `[(t|f) ... (t|f)]` and specifies if each atomic proposition holds (`t`) or does not hold `f`. The length of this list must match the number of atomic propositions listed in the header. 
+The `<apEval>` has the form `{<apIndex> ... <apIndex>}` where `<apIndex>` is a natrual number that identifies one of the provided APs. 
 The second line lists all successors of that state.
 Every state must have at least one successor state.
 
 Consider the following example:
 
 ```
-aps "x" "y"
-init 0 1
+AP: "x" "y"
+Init: 0 1
 --BODY-- 
-State: 0 [f f]
+State: 0 {}
 0 2 3
-State: 1 [f t]
+State: 1 {1}
 0 1 2
-State: 2 [t f]
+State: 2 {0}
 0 2 3
-State: 3 [t t]
+State: 3 {0 1}
 2 3
+--END--
 ```
 
 This specification declares states `0` and  `1` as initial states and `"x"` and `"y"` as APs.
-For each state, we give the evaluation of the atomic propositions as a list of booleans (either `f`, or `t`).
-For example, in state `1`, AP `"x"` does not hold but `"y"` does.
+For each state, we give the evaluation of the atomic propositions by listing the indicies of all APs which hold in the given state.
+For example, in state `1`, AP `"x"` (index 0) does not hold but `"y"` (index 1) does.
 Each state lists all successors of that node. 
 For example, the successor states of state `0` are states `0`, `2`, and `3`.
 
@@ -285,9 +286,9 @@ The `<varTypeBlock>` contains a sequence of type assignments of the form
 ```
 where `<varName>` is the name of a variable.
 A valid variable name starts with a letter or `_`, followed by an arbitrary sequence of letters, digits, or the special symbols `_`, `$`, `#`, `-`, `[`, `]`, `.`.
-Note that different from NuSMV, we support `[`, `]`, `.` in variable names.
+Note that, different from NuSMV, we support `[`, `]`, `.` in variable names.
 `<type>` can either be `boolean` or `l..h` where `l` and `h` are two natural numbers. 
-Note that we do not support arrays, but instead allow `[`, `]`, `.` in variable names.
+Note that we do not support arrays and more than one module, but instead allow `[`, `]`, `.` in variable names.
 This allows us to easily express arrays by using explicit variables for each entry.
 For example, instead of declaring `var : array 0..2 of 0..3;`, we can declare three individual variables `var[0] : 0..3; var[1] : 0..3; var[2] : 0..3;` and access them in expression as usual (via `var[0]`, `var[1]`, and `var[2]`).
 
@@ -300,10 +301,11 @@ or
 ```
 next(<varName>) := <expression>;
 ```
-In the former case, we define all possible initial values for variable `<varName>`. Here `<expression>` is an expression that contains no variables (We define expressions below).
+In the former case, we define all possible initial values for variable `<varName>`. Here `<expression>` is an expression that gives the initial value(s) for `<varName>`.
+Note that we do not allow cyclic dependencies. 
 In this case, `<expression>` must evaluate to a value that matches the type assigned to `<varName>` in the `<varTypeBlock>`. Alternatively, it can also evaluate to a set of values, in which case there are multiple initial values for that variable.
 
-In the latter case, we define all successor values for the variable in one step during the evaluation. `<expression>` is again a variable (which this time may contain variables).
+In the latter case, we define all successor values for the variable in one step during the evaluation. 
 In each step, we evaluate the expression in the current state and assign the resulting value to `<varName>` in the next state.
 If `<expression>` evaluates to a set of values, we branch into all possible values. 
 In this case, the `<expression>` can use both program variables (defined in the `<varTypeBlock>`) and also defined variables (from the `<defineBlock>`, see next).
@@ -375,7 +377,7 @@ DEFINE
 HyperLTL properties on symbolic NuSMV-like systems are specified by using atomic propositions of two forms.
 Either they have the form
 ```
-*<expression>*_<VAR>
+{<expression>}_<VAR>
 ```
 where `<expression>` is an expression of type bool and `<VAR>` is a trace variable.
 This atomic proposition holds whenever `<expression>` evaluated in the current step of the trace bound to `<VAR>` yields `TRUE`. 
@@ -383,7 +385,7 @@ This atomic proposition holds whenever `<expression>` evaluated in the current s
 
 Or of the form 
 ```
-*<expression1>*_<VAR1> = *<expression2>*_<VAR2>
+{<expression1>}_<VAR1> = {<expression2>}_<VAR2>
 ```
 where `<expression1>` and `<expression2>` are expressions of the same type, and `<VAR1>` and `<VAR2>` are trace variables.
 This atomic proposition states that the result of evaluating `<expression1>` on trace `<VAR1>` is the same as evaluating expression `<expression2>` on trace `<VAR2>`.
@@ -393,7 +395,7 @@ An example property on the above example system would be:
 ```
 forall A. exists B. 
 (
-    (*action*_A = *action*_B)  U  (*NO_water*_B)
+    ({action}_A = {action}_B)  U  ({NO_water}_B)
 )
 ```
 
@@ -409,14 +411,15 @@ A boolean program operates on variables that hold a (statically bounded) vector 
 
 A boolean program has the form 
 ```
-dom [(<varName>, i1) ... (<varName>, in)]
+<varName> : <bitwidth>;
+...
+<varName> : <bitwidth>;
 <statement>
 ```
 
-The header defines a bitwidth for each variable. 
+The initial header defines a bitwidth for each variable. 
 A valid variable name (`<varName>`) is any non-empty sequence of letters. 
-`i1`, ..., `in` are positive natural numbers. 
-For example `[(h, 1) (l, 2)]` specifies that variable `h` holds a 1-bit vector and `l` holds two bits. 
+Each `<bitwidth>` is a natural number that defines the bitwidth of each variable
 
 Statements (`<statement>`) are formed by using expressions. 
 
@@ -424,42 +427,40 @@ Expressions `<expression>` have the form
 - `<varName>`: The value currently bound to a variable
 - `t`: boolean true
 - `f`: boolean false
-- `(& <expression> <expression>)`: Pointwise conjunction. Assumes both arguments to evaluate to vectors of the same length.
-- `(| <expression> <expression>)`: Pointwise disjunction. Assumes both arguments to evaluate to vectors of the same length.
-- `(! <expression>)`: Pointwise negation
-- `(x <expression> i)`: Duplication where `i` is a natural number. First evaluates `<expression>` and the duplicates (concats) that vector `i` times. 
-- `(#<expression> i)`: Projection where `i` is a natural number. Evaluates to the `i`th value in the vector that `e` evaluates to.
+- `<expression> & <expression>`: Pointwise conjunction. Assumes both arguments to evaluate to vectors of the same length.
+- ` <expression> | <expression>`: Pointwise disjunction. Assumes both arguments to evaluate to vectors of the same length.
+- `! <expression>`: Pointwise negation
+- `<expression>[l, u]`: Evlautes `<expression>` and takes the bits ranging from position `l` (a natural number) to position `u` (also a natural number). You can write `<expression>[i]` as a shorthand for `<expression>[i, i]`.
+- `(i * <expression>)`: Duplication where `i` is a natural number. First evaluates `<expression>` and the duplicates (concats) that vector `i` times. 
 
 Statements (`<statement>`) have the form 
-- `<varName> := <expression>`: Assigns the value that `<expression>` evaluates to variable `<varName>`.
-- `READ(<varName>)`:  Assigns a non-deterministic value to `<varName>`, modelling an unknown input. 
-- `IF(<expression>) THEN {<statement>} ELSE {<statement>}`: Branches on whether or not `<expression>` evaluates to `[t]`.
-- `[<statement>; <statement>; ....; <statement>]`: Execute all statements one after each other.
-- `WHILE(<expression>) {<statement>}`: Executes `<statement>` as long as `<expression>` evaluates to `[t]`.
-- `NONDET THEN {<statement>} ELSE {<statement>}`: Nondeterministic branching.
+- `<varName> = <expression>;`: Assigns the value that `<expression>` evaluates to variable `<varName>`.
+- `<varName> = *;`:  Assigns a non-deterministic value to `<varName>`.
+- `if <expression> {<statement>} else {<statement>}`: Branches on whether or not `<expression>` evaluates to `[t]`.
+- `<statement> <statement> ....; <statement>`: Execute all statements one after each other.
+- `while <expression> {<statement>}`: Executes `<statement>` as long as `<expression>` evaluates to `[t]`.
+- `if * {<statement>} else {<statement>}`: Nondeterministic branching.
 
 
 Initially, all variables are assigned the constant `f` vector (of the length specified in the domain in the first line).
 For details on the semantics see ["A Temporal Logic for Strategic Hyperproperties"](https://doi.org/10.4230/LIPIcs.CONCUR.2021.24).
 
-
 Consider the following example boolean program:
 
 ```
-dom: [(h 2), (l 2), (o 2)]
-[
-    o := (x t 2);
-    WHILE(t) {
-        [
-            READ(h);
-            IF((#h 0)) THEN {
-                o := (! o)
-            } ELSE {
-                o := (& (!o) (| h (!h)))
-            }
-        ]
+h : 1;
+l : 1;
+o : 1;
+
+o = 1 * true;
+while(true) {
+    h = *;
+    if (h[0]) {
+        o = !o;
+    } else {
+        o = (!o) & (h | !h);
     }
-]
+}
 ```
 
 HyperLTL properties on boolean programs are specified by using atomic propositions of the form `{<varName>_j}_<VAR>` where `<varName>` is a variable in the program, `j` an index and `<VAR>` refers to a trace variable from the quantifier prefix.
