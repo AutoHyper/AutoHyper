@@ -84,18 +84,24 @@ let dictToMap (d : Dictionary<'A, 'B>) =
 module ParserUtil = 
     open FParsec
 
-    /// Parser that parses everything between two '"'
-    let escapedStringParser : Parser<string, unit> = 
-        skipChar '\"' >>. manyChars (satisfy (fun c -> c <> '\"')) .>> skipChar '\"'    
+    let escapedStringParser : Parser<string, unit> =
+        let escapedCharParser : Parser<string, unit> =  
+            anyOf "\"\\/bfnrt"
+            |>> fun x -> 
+                match x with
+                | 'b' -> "\b"
+                | 'f' -> "\u000C"
+                | 'n' -> "\n"
+                | 'r' -> "\r"
+                | 't' -> "\t"
+                | c   -> string c
 
-    // A parser for the LTL atoms in programs
-    let relVarParserBit : Parser<(String * int), unit>= 
-        pstring "{" >>. 
-            pipe3
-                (spaces >>. many1Chars letter)
-                (pchar '_')
-                (pint32 .>> pstring "}")
-                (fun x _ y  -> (x, y))
+        between
+            (pchar '"')
+            (pchar '"')
+            (stringsSepBy (manySatisfy (fun c -> c <> '"' && c <> '\\')) (pstring "\\" >>. escapedCharParser))
+
+    
 
 
 module SubprocessUtil = 

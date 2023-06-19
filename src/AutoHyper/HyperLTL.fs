@@ -103,16 +103,90 @@ let extractBlocks (qf : list<TraceQuantifierType>) =
 
     helper qf.[0] 0 qf
 
+
+
+
+
+module SymbolicHyperLTL = 
+    open TransitionSystemLib.SymbolicSystem
+
+    type RelationalAtom = 
+        | UnaryPred of Expression * int
+        | RelationalEq of Expression * int * Expression * int
+
+    type SymbolicHyperLTL = 
+        {
+            QuantifierPrefix : list<TraceQuantifierType>
+            LTLMatrix : LTL<RelationalAtom>
+        }
+
+    type NamedRelationalAtom = 
+        | NamedUnaryPred of Expression * String
+        | NamedRelationalEq of Expression * String * Expression * String
+
+
+    type NamedSymbolicHyperLTL = 
+        {
+            QuantifierPrefix : list<TraceQuantifierType * String>
+            LTLMatrix : LTL<NamedRelationalAtom>
+        }
+
+    module NamedSymbolicHyperLTL = 
+
+        let toSymbolicHyperLTL (f : NamedSymbolicHyperLTL) = 
+            let names = f.QuantifierPrefix |> List.map snd
+
+            let nameMap = 
+                names 
+                |> List.mapi (fun i n -> n, i)
+                |> Map.ofList
+
+            {
+                SymbolicHyperLTL.QuantifierPrefix = f.QuantifierPrefix |> List.map fst 
+                LTLMatrix = 
+                    f.LTLMatrix
+                    |> LTL.map (fun x -> 
+                        match x with 
+                            | NamedUnaryPred (e, n) -> 
+                                UnaryPred(e, nameMap.[n])
+                            | NamedRelationalEq (e1, n1, e2, n2) -> 
+                                RelationalEq (e1, nameMap.[n1], e2, nameMap.[n2])
+                    )
+            }
+            
 module Parser =
     open FParsec
 
+    let private keywords = 
+        [
+            "X"
+            "G"
+            "F"
+            "U"
+            "W"
+            "R"
+        ]
+
+    let traceVariableParser = 
+        attempt (
+            pipe2
+                letter
+                (manyChars (letter <|> digit))
+                //(manyChars letter)
+                (fun x y -> string(x) + y)
+            >>= fun s ->
+                if List.contains s keywords then
+                    fail ""
+                else preturn s
+            )
+
     let namedPrefixParser = 
         let eParser = 
-            skipString "exists " >>. spaces >>. (many1Chars letter) .>> spaces .>> pchar '.'
+            skipString "exists " >>. spaces >>. traceVariableParser .>> spaces .>> pchar '.'
             |>> fun x -> EXISTS, x
 
         let uParser = 
-            skipString "forall " >>. spaces >>. (many1Chars letter) .>> spaces .>> pchar '.'
+            skipString "forall " >>. spaces >>. traceVariableParser .>> spaces .>> pchar '.'
             |>> fun x -> FORALL, x
         
         spaces >>.
@@ -120,7 +194,7 @@ module Parser =
 
     let private namedHyperltlParser (atomParser : Parser<'T, unit>) = 
         let ap : Parser<'T * String, unit>= 
-            atomParser .>> pchar '_' .>>. (many1Chars letter)
+            atomParser .>> pchar '_' .>>. traceVariableParser
 
         pipe2 
             namedPrefixParser
@@ -133,3 +207,56 @@ module Parser =
         match res with
         | Success (res, _, _) -> Result.Ok res
         | Failure (err, _, _) -> Result.Error err
+        
+    // ####################################################################
+    // Parsing for NuSMV HyperLTL HyperLTL properties 
+
+    let private namedSymbolicHyperltlParser = 
+        let indexedExpressionParser =   
+            tuple2
+                (skipChar '{' >>. spaces >>. TransitionSystemLib.SymbolicSystem.Parser.expressionParser .>> spaces .>> skipChar '}')
+                (spaces >>. skipChar '_' >>. spaces >>. traceVariableParser) 
+
+        let unaryAtomParser = 
+            indexedExpressionParser
+            |>> SymbolicHyperLTL.NamedUnaryPred
+
+        let relationalAtomParser = 
+            pipe2
+                (indexedExpressionParser .>> spaces .>> skipChar '=')
+                (spaces >>. indexedExpressionParser)
+                (fun (e1, pi1) (e2, pi2) -> SymbolicHyperLTL.NamedRelationalEq(e1, pi1, e2, pi2))
+
+        let atomParser = 
+            attempt(relationalAtomParser) <|> unaryAtomParser
+
+        pipe2 
+            namedPrefixParser
+            (FsOmegaLib.LTL.Parser.ltlParser atomParser)
+            (fun x y -> {SymbolicHyperLTL.NamedSymbolicHyperLTL.QuantifierPrefix = x; SymbolicHyperLTL.NamedSymbolicHyperLTL.LTLMatrix = y})
+
+    let parseNamedSymbolicHyperltl s =    
+        let full = namedSymbolicHyperltlParser .>> spaces .>> eof
+        let res = run full s
+        match res with
+        | Success (res, _, _) -> Result.Ok res
+        | Failure (err, _, _) -> Result.Error err
+
+    // ####################################################################
+    // Parsing for Boolean Program HyperLTL properties 
+
+    let private relVarParserBit : Parser<(String * int), unit>= 
+        pstring "{" >>. 
+            pipe3
+                (spaces >>. many1Chars letter)
+                (pchar '_')
+                (pint32 .>> pstring "}")
+                (fun x _ y  -> (x, y))
+
+    let parseBooleanProgramNamedHyperLTL s =    
+        let full = namedHyperltlParser relVarParserBit .>> spaces .>> eof
+        let res = run full s
+        match res with
+        | Success (res, _, _) -> Result.Ok res
+        | Failure (err, _, _) -> Result.Error err
+        

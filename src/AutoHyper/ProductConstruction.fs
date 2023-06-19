@@ -19,12 +19,13 @@ module ProductConstruction
 
 open System.Collections.Generic
 
-open TransitionSystem
+open TransitionSystemLib.TransitionSystem
+
 open FsOmegaLib.SAT
 open FsOmegaLib.AutomatonSkeleton
 open FsOmegaLib.NBA
 
-let constructAutomatonSystemProduct (aut : NBA<'Astate, 'L * int>) (tslist : list<TransitionSystem<'Tstates, 'L>>) (indexList : list<int>) = 
+let constructAutomatonSystemProduct (aut : NBA<'Astate, 'L * int>) (tslist : list<TransitionSystem<'L>>) (indexList : list<int>) = 
 
     // Reverse the mapping of indexList, i.e., map every index that should be mapped to the index (position) in indexlist
     // All keys in copyToTsMapper should thus be eliminated with the product and all others remain unchanged
@@ -89,7 +90,8 @@ let constructAutomatonSystemProduct (aut : NBA<'Astate, 'L * int>) (tslist : lis
         // This map fixes all propositions that refer to a system that take part in the product
         let fixingMap = 
             quickApIndexFinderPos
-            |> Map.map (fun _ (index, pos) -> apEvaluations.[index].[pos])
+            |> Map.map (fun _ (index, pos) -> 
+                Set.contains pos apEvaluations.[index])
 
         let automatonSucs = 
             aut.Edges.[astate]
@@ -134,7 +136,7 @@ let constructAutomatonSystemProduct (aut : NBA<'Astate, 'L * int>) (tslist : lis
     }
     
 
-let constructSelfCompositionAutomaton (tslist : list<TransitionSystem<'T, 'L>>) (interestingAps : list<list<'L>>) : NBA<_,_> = 
+let constructSelfCompositionAutomaton (tslist : list<TransitionSystem<'L>>) (interestingAps : list<list<'L>>) : NBA<_,_> = 
     // Assert that all interesting aps are also aps in the transition system
     assert(
         tslist
@@ -184,7 +186,8 @@ let constructSelfCompositionAutomaton (tslist : list<TransitionSystem<'T, 'L>>) 
 
                 interestingAps.[i]
                 |> List.map (fun  a -> 
-                    let b = apEval.[apMapping.[i].[a]]
+                    let b = Set.contains (apMapping.[i].[a]) apEval
+                    
                     let newApIndex = List.findIndex (fun c -> c = (a, i)) combinedAps
                     if b then Literal.PL newApIndex else Literal.NL newApIndex
                     )

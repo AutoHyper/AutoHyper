@@ -1,3 +1,6 @@
 [submodule "src/FsOmegaLib"]
 	path = src/FsOmegaLib
 	url = https://github.com/ravenbeutner/FsOmegaLib
+[submodule "src/TransitionSystemLib"]
+	path = src/TransitionSystemLib
+	url = https://github.com/ravenbeutner/TransitionSystemLib.git

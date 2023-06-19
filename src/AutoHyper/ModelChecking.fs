@@ -21,11 +21,11 @@ open FsOmegaLib.LTL
 open FsOmegaLib.NBA
 open FsOmegaLib.Operations
 
+open TransitionSystemLib.TransitionSystem
+
 open Util
 open RunConfiguration
-open TransitionSystem
 open HyperLTL
-
 
 let private swComplement = System.Diagnostics.Stopwatch()
 let private swProduct = System.Diagnostics.Stopwatch()
@@ -53,7 +53,7 @@ type Mode =
     | COMP 
     | INCL of InclusionChecker
 
-let private inclusionTest (config : Configuration)  (tslist : list<TransitionSystem<'Tstate, 'L>>) (aut : NBA<int, 'L * int>) (inclusionChecker : InclusionChecker) = 
+let private inclusionTest (config : Configuration)  (tslist : list<TransitionSystem<'L>>) (aut : NBA<int, 'L * int>) (inclusionChecker : InclusionChecker) = 
 
     // Map each index to the APs that are used by aut at that position
     let automatonAps = 
@@ -110,7 +110,7 @@ let private inclusionTest (config : Configuration)  (tslist : list<TransitionSys
     swInclusion.Stop()
     res
 
-let rec private modelCheckComplementationRec (config : Configuration)  (tslist : list<TransitionSystem<'Tstate, 'L>>) (qf : list<int>) (isNegated : bool) (aut : NBA<int, 'L * int>) m = 
+let rec private modelCheckComplementationRec (config : Configuration)  (tslist : list<TransitionSystem<'L>>) (qf : list<int>) (isNegated : bool) (aut : NBA<int, 'L * int>) m = 
     assert (tslist.Length = List.sum qf)
 
     if qf.Length = 0 then
@@ -192,7 +192,7 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
 
         modelCheckComplementationRec config tslist[0..projStartIndex-1] qf[0..qf.Length-2] isNegated nextAut m
        
-let private modelCheckInit (config : Configuration)  (tslist : list<TransitionSystem<'T, 'L>>) (qfPrefix : list<int>) (ltlMatrix : LTL<'L * int>) (m : Mode) = 
+let private modelCheckInit (config : Configuration)  (tslist : list<TransitionSystem<'L>>) (qfPrefix : list<int>) (ltlMatrix : LTL<'L * int>) (m : Mode) = 
     assert (tslist.Length = List.sum qfPrefix)
     
     assert(qfPrefix.Length >= 2)
@@ -228,7 +228,7 @@ let private modelCheckInit (config : Configuration)  (tslist : list<TransitionSy
     modelCheckComplementationRec config tslist qfPrefix isNegated currentNBA m
     
 
-let private modelCheckAlternationFree (config : Configuration) (tslist : list<TransitionSystem<'T, 'L>>) (prop : HyperLTL<'L>) =  
+let private modelCheckAlternationFree (config : Configuration) (tslist : list<TransitionSystem<'L>>) (prop : HyperLTL<'L>) =  
     config.Logger [THREE; FOUR] "Verify alternation free formula\n"
     assert(extractBlocks prop.QuantifierPrefix |> List.length = 1)
 
@@ -282,7 +282,7 @@ let private modelCheckAlternationFree (config : Configuration) (tslist : list<Tr
     else 
         isNotEmpty
     
-let modelCheck (config : Configuration) (tslist : list<TransitionSystem<'T, 'L>>) (prop : HyperLTL<'L>) m = 
+let modelCheck (config : Configuration) (tslist : list<TransitionSystem<'L>>) (prop : HyperLTL<'L>) m = 
     let sw = System.Diagnostics.Stopwatch()
     sw.Start()
 
@@ -294,8 +294,10 @@ let modelCheck (config : Configuration) (tslist : list<TransitionSystem<'T, 'L>>
     
     tslist
     |> List.iteri (fun i ts ->
-        if TransitionSystem.isConsistent ts |> not then
-            raise <| AnalysisException $"The %i{i}th system is not consistent."
+        match TransitionSystem.findError ts with 
+        | None -> ()
+        | Some msg -> 
+            raise <| AnalysisException $"Found error in the %i{i}th system: %s{msg}"
             )
     
     if HyperLTL.isConsistent prop |> not then

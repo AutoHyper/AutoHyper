@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsOmegaLib", "FsOmegaLib\FsOmegaLib.fsproj", "{DD8A07FC-411A-4A37-9028-96CFC7DAAC8A}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TransitionSystemLib", "TransitionSystemLib\TransitionSystemLib.fsproj", "{8F550FC8-BC12-48E8-B67F-115E23E6B2B8}"
+EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AutoHyper", "AutoHyper\AutoHyper.fsproj", "{6888BD6C-6673-4FFF-A144-C95C052EE41A}"
 EndProject
 Global
@@ -24,5 +26,9 @@ Global
 		{6888BD6C-6673-4FFF-A144-C95C052EE41A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6888BD6C-6673-4FFF-A144-C95C052EE41A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6888BD6C-6673-4FFF-A144-C95C052EE41A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F550FC8-BC12-48E8-B67F-115E23E6B2B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F550FC8-BC12-48E8-B67F-115E23E6B2B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F550FC8-BC12-48E8-B67F-115E23E6B2B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F550FC8-BC12-48E8-B67F-115E23E6B2B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
