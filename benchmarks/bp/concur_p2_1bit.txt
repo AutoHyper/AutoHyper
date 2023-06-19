@@ -1,14 +1,11 @@
-dom: [(h 1), (l 1), (o 1), (b 1)]
+h : 1;
+l : 1;
+o : 1;
+b : 1;
 
-WHILE(t) {
-    [
-        READ(h);
-        b := l;
-        READ(l);
-        IF ((# h 0)) THEN {
-            o := (& l b)
-        } ELSE {
-            o := (& l b)
-        }
-    ]
+while(true) {
+    h = *;
+    b = l;
+    l = *;
+    o = l & b;
 }

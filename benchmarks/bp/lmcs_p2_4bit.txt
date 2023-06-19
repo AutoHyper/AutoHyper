@@ -1,10 +1,9 @@
-dom: [(o 4), (h 4), (l 4)]
-[
-    o := (x t 4);
-    WHILE(t) {
-        [
-            READ(l);
-            o := l
-        ]
-    }
-]
+h : 4;
+l : 4;
+o : 4;
+
+o = 4 * true;
+while(true) {
+    l = *;
+    o = l;
+}

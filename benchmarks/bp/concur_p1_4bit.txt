@@ -1,15 +1,13 @@
-dom: [(h 4), (l 4), (o 4)]
-[
-    o := (x t 4);
-    WHILE(t) {
-        [
-            READ(h);
-            IF((#h 0)) THEN {
-                o := (! o)
-            } ELSE {
-                o := (& (!o) (| h (!h)))
-            }
-        ]
+h : 4;
+l : 4;
+o : 4;
 
+o = 4 * true;
+while(true) {
+    h = *;
+    if (h[0]) {
+        o = !o;
+    } else {
+        o = (!o) & (h | !h);
     }
-]
+}

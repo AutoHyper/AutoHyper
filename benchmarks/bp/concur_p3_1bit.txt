@@ -1,14 +1,13 @@
-dom: [(h 1), (l 1), (o 1)]
-[
-    o := (x t 1);
-    WHILE(t) {
-        [
-            READ(h);
-            NONDET THEN {
-                o := (x t 1)
-            } ELSE {
-                o := (x f 1)
-            }
-        ]
+h : 1;
+l : 1;
+o : 1;
+
+o = 1 * true;
+while(true) {
+    h = *;
+    if * {
+        o = 1 * true;
+    } else {
+        o = 1 * false;
     }
-]
+}

@@ -1,7 +1,8 @@
-dom: [(o 1), (h 1), (l 1)]
-[
-    o := (x t 1);
-    WHILE(t) {
-        o := (! o)
-    }
-]
+h : 1;
+l : 1;
+o : 1;
+
+o = 1 * true;
+while(true) {
+    o = !o;
+}
