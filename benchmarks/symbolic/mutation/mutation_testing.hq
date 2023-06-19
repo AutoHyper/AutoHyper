@@ -1,16 +1,16 @@
 exists A. forall B. 
 (
     (
-        *action*_A = *action*_B
+        {action}_A = {action}_B
     ) 
     U 
     ( 
-        (*beverage*_A = *beverage*_B) 
+        ({beverage}_A = {beverage}_B) 
         |
-        (*water*_A = *water*_B) 
+        ({water}_A = {water}_B) 
         |
-        !(*NO_water*_A <-> *NO_water*_B) 
+        !({NO_water}_A <-> {NO_water}_B) 
         |
-        !(*NO_output*_A <-> *NO_output*_B)
+        !({NO_output}_A <-> {NO_output}_B)
     )
 )

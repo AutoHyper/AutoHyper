@@ -3,30 +3,30 @@ forall A. exists B.
 (
     F!
         (
-            (*PIN[2]*_A = *PIN[2]*_B) 
+            ({PIN[2]}_A = {PIN[2]}_B) 
             &
-            (*PIN[1]*_A = *PIN[1]*_B) 
+            ({PIN[1]}_A = {PIN[1]}_B) 
             &
-            (*PIN[0]*_A = *PIN[0]*_B)
+            ({PIN[0]}_A = {PIN[0]}_B)
         ) 
 )
 &
 ( 
     (
-        ! *halt*_A 
+        ! {halt}_A 
         |
-        ! *halt*_B
+        ! {halt}_B
     ) 
     U 
     (
-        (*halt*_A & *halt*_B) 
+        ({halt}_A & {halt}_B) 
         &
         (
-            (*RESULT[2]*_A = *RESULT[2]*_B) 
+            ({RESULT[2]}_A = {RESULT[2]}_B) 
             &
-            (*RESULT[1]*_A = *RESULT[1]*_B) 
+            ({RESULT[1]}_A = {RESULT[1]}_B) 
             &
-            (*RESULT[0]*_A = *RESULT[0]*_B)
+            ({RESULT[0]}_A = {RESULT[0]}_B)
         )
     )
 )

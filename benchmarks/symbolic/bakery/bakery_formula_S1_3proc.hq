@@ -1,22 +1,22 @@
 exists A. exists B.
 G
 (
-    (*p1_line=0*_A <-> *p2_line=0*_B) 
+    ({p1_line=0}_A <-> {p2_line=0}_B) 
     &
-    (*p2_line=0*_A <-> *p1_line=0*_B)
+    ({p2_line=0}_A <-> {p1_line=0}_B)
     &
-    (*p1_line=1*_A <-> *p2_line=1*_B)
+    ({p1_line=1}_A <-> {p2_line=1}_B)
     &
-    (*p2_line=1*_A <-> *p1_line=1*_B)
+    ({p2_line=1}_A <-> {p1_line=1}_B)
     &
-    (*p1_line=4*_A <-> *p2_line=4*_B)
+    ({p1_line=4}_A <-> {p2_line=4}_B)
     &
-    (*p2_line=4*_A <-> *p1_line=4*_B)
+    ({p2_line=4}_A <-> {p1_line=4}_B)
 )
 &
 F
 (
-    !(*p1_line*_A = *p2_line*_B) 
+    !({p1_line}_A = {p2_line}_B) 
     |
-    !(*p2_line*_A = *p1_line*_B)
+    !({p2_line}_A = {p1_line}_B)
 )

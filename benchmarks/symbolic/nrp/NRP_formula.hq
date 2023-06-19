@@ -1,40 +1,40 @@
 exists A. forall B. 
 (
-    (F *line=3*_A) 
+    (F {line=3}_A) 
     & 
-    (F *line=5*_A) 
+    (F {line=5}_A) 
     & 
-    (F *line=6*_A)
+    (F {line=6}_A)
 ) 
 &
 ( 
     (G
-        (*sender_actions*_A = *sender_actions*_B)
+        ({sender_actions}_A = {sender_actions}_B)
     ) 
     -> 
     (
         (F
-            (*line=5*_B)
+            ({line=5}_B)
         ) 
         <-> 
         (F
-            (*line=6*_B)
+            ({line=6}_B)
         )
     ) 
 ) 
 &
 ( 
     (G 
-        (*receiver_actions*_A = *receiver_actions*_B) 
+        ({receiver_actions}_A = {receiver_actions}_B) 
     ) 
     -> 
     (
         (F 
-            (*line=5*_B)
+            ({line=5}_B)
         )
         <-> 
         (F 
-            (*line=6*_B)
+            ({line=6}_B)
         )
     ) 
 )
