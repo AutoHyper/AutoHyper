@@ -19,9 +19,7 @@ The system can either be provided as an explicit-state system or a symbolic syst
 Support for symbolic systems includes a fragment of the [NuSMV specification language](https://nusmv.fbk.eu/NuSMV/userman/v26/nusmv.pdf) and programs in a simple boolean programming language [2].
 You can read the details in our paper:
 
-> AutoHyper: Explicit-State Model Checking for HyperLTL.  
-> Raven Beutner and Bernd Finkbeiner.
-> TACAS 2023. [1]
+> AutoHyper: Explicit-State Model Checking for HyperLTL. Raven Beutner and Bernd Finkbeiner. TACAS 2023. [1]
 
 
 ## Structure 
@@ -597,4 +595,5 @@ For further examples, take a look at the `benchmarks/bp` folder.
 ## References  
 
 [1] AutoHyper: Explicit-State Model Checking for HyperLTL. Raven Beutner and Bernd Finkbeiner. TACAS 2023. 
+
 [2] A Temporal Logic for Strategic Hyperproperties. Raven Beutner and Bernd Finkbeiner. CONCUR 2023.
