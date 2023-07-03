@@ -19,7 +19,7 @@ for p in progs:
     for solver in solvers: 
         startTime = time.time()
         try:
-            result = subprocess.run(["../app/AutoHyper", "-bp", "./bp/" + p,  "./bp/gni.txt", "-m", solver, "-v", "0"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+            result = subprocess.run(["../app/AutoHyper", "--bp", "./bp/" + p,  "./bp/gni.txt", "-m", solver, "-v", "0"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
 
             endTime = time.time()
             et = endTime - startTime 

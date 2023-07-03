@@ -14,7 +14,7 @@ for l in lines:
     print("System: " + sys)
     print("Property: " + prop)
 
-    args = ["-nusmv"] + a + ["-m", "incl_spot", "-v", "1"]
+    args = ["--nusmv"] + a + ["-m", "incl_spot", "-v", "1"]
 
     startTime = time.time()
     result = subprocess.run(["../app/AutoHyper"] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
