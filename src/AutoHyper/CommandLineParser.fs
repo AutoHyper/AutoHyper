@@ -83,30 +83,30 @@ let parseCommandLineArguments (args : list<String>) =
             | [] -> Result.Ok opt
             | x::xs -> 
                 match x with 
-                    | "-e" -> 
+                    | "--exp" -> 
                         let args, ys = splitByPredicate (fun (x : String) -> x.[0] = '-') xs
             
                         if List.length args < 2 then 
-                            Result.Error "Option -e must be followed by at least two arguments"
+                            Result.Error "Option --exp must be followed by at least two arguments"
                         else 
                             let propertyFile = args[args.Length - 1]
                             let systemFiles = args[0..args.Length - 2]
                             parseArgumentsRec ys {opt with ExecMode = ExplictSystem(systemFiles, propertyFile) |> Some}
-                    | "-nusmv" -> 
+                    | "--nusmv" -> 
                         let args, ys = splitByPredicate (fun (x : String) -> x.[0] = '-') xs
             
                         if List.length args < 2 then 
-                            Result.Error "Option -nusmv must be followed by at least two arguments"
+                            Result.Error "Option --nusmv must be followed by at least two arguments"
                         else 
                             let propertyFile = args[args.Length - 1]
                             let systemFiles = args[0..args.Length - 2]
                             parseArgumentsRec ys {opt with ExecMode = NusmvSystem(systemFiles, propertyFile)  |> Some}
 
-                    | "-bp" -> 
+                    | "--bp" -> 
                         let args, ys = splitByPredicate (fun (x : String) -> x.[0] = '-') xs
             
                         if List.length args < 2 then 
-                            Result.Error "Option -bp must be followed by at least two arguments"
+                            Result.Error "Option --bp must be followed by at least two arguments"
                         else 
                             let propertyFile = args[args.Length - 1]
                             let systemFiles = args[0..args.Length - 2]

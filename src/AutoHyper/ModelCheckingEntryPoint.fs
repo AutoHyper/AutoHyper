@@ -54,18 +54,16 @@ let explictSystemVerification (config : Configuration) systemPaths propPath m  =
         try 
             File.ReadAllText propPath
         with 
-            | _ -> 
-                raise <| AnalysisException $"Could not open/read file %s{propPath}"
+        | _ -> raise <| AnalysisException $"Could not open/read file %s{propPath}"
                 
     let tscontent = 
         systemPaths
         |> List.map (fun x -> 
-                try 
-                    File.ReadAllText  x
-                with 
-                    | _ -> 
-                        raise <| AnalysisException $"Could not open/read file %s{x}"
-            )
+            try 
+                File.ReadAllText  x
+            with 
+            | _ -> raise <| AnalysisException $"Could not open/read file %s{x}"
+        )
 
     config.Logger [TWO; THREE; FOUR] $"Read Input in: %i{sw.ElapsedMilliseconds}ms\n"
 
@@ -74,10 +72,10 @@ let explictSystemVerification (config : Configuration) systemPaths propPath m  =
 
     let hyperltl =
         match HyperLTL.Parser.parseNamedHyperLTL Util.ParserUtil.escapedStringParser hyperltlcontent with 
-            | Result.Ok x ->
-                NamedHyperLTL.toHyperLTL x
-            | Result.Error err -> 
-                raise <| AnalysisException $"The HyperLTL formula could not be parsed: %s{err}"
+        | Result.Ok x ->
+            NamedHyperLTL.toHyperLTL x
+        | Result.Error err -> 
+            raise <| AnalysisException $"The HyperLTL formula could not be parsed: %s{err}"
                 
                 
     if HyperLTL.isConsistent hyperltl |> not then
@@ -90,7 +88,7 @@ let explictSystemVerification (config : Configuration) systemPaths propPath m  =
                 | Result.Ok y -> y 
                 | Result.Error msg -> 
                     raise <| AnalysisException $"The explicit-state system could not be parsed: %s{msg}"
-                    )
+        )
 
     config.Logger [TWO; THREE; FOUR] $"Parsed Input in: %i{sw.ElapsedMilliseconds}ms\n"
     
@@ -224,7 +222,7 @@ let nuSMVSystemVerification config systemPaths propPath m  =
             )
               
             let ts = 
-                SymbolicSystem.convertSymbolicSystemToTS plist.[0] atomList
+                SymbolicSystem.convertSymbolicSystemToTransitionSystem plist.[0] atomList
 
             List.init (unfoldedHyperLTL.QuantifierPrefix.Length) (fun _ -> ts)
         else 
@@ -250,7 +248,7 @@ let nuSMVSystemVerification config systemPaths propPath m  =
                         )
                 )
                     
-                SymbolicSystem.convertSymbolicSystemToTS plist.[i] atomList
+                SymbolicSystem.convertSymbolicSystemToTransitionSystem plist.[i] atomList
                 )
                  
     config.Logger [TWO; THREE; FOUR] $"Compiled Program to explicit-state transition system in %i{sw.ElapsedMilliseconds}ms\n"
@@ -348,7 +346,7 @@ let booleanProgramVerification config systemPaths propPath m  =
                 )
 
             let ts = 
-                BooleanProgram.convertBooleanProgramToTS prog relevantAps
+                BooleanProgram.convertBooleanProgramToTransitionSystem prog relevantAps
                 |> TransitionSystem.mapAPs (fun (n, i) -> n + "_" + string(i))
 
             List.init (hyperltl.QuantifierPrefix.Length) (fun _ -> ts)
@@ -372,7 +370,7 @@ let booleanProgramVerification config systemPaths propPath m  =
                     if progList.[i].DomainMap.ContainsKey v && progList.[i].DomainMap.[v] > j |> not then
                         raise <| AnalysisException $"AP (%A{v}, %i{j}) is used in the HyperLTL property but variable %A{v} does not exists or has not the required bit width. Aborting."
                     )
-                BooleanProgram.convertBooleanProgramToTS progList.[i] relevantAps
+                BooleanProgram.convertBooleanProgramToTransitionSystem progList.[i] relevantAps
                 |> TransitionSystem.mapAPs (fun (n, i) -> n + "_" + string(i))
             )
 
