@@ -87,10 +87,16 @@ let private run (args: array<string>) =
     if solverConfig.ForkliftJarPath.IsSome then 
         if System.IO.FileInfo(solverConfig.ForkliftJarPath.Value).Exists |> not then 
             raise <| AnalysisException "The path to the FORKLIFT jar is incorrect"
+
+    let mcOptions = 
+        {
+            ModelCheckingOptions.ComputeBisimulation = cmdArgs.ComputeBisimulation
+        }
     
     let config = 
         {
             Configuration.SolverConfig = solverConfig
+            ModelCheckingOptions = mcOptions
             Logger = logger
         }
 

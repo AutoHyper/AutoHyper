@@ -35,7 +35,7 @@ let private verify config (tslist : list<TransitionSystem<String>>) (hyperltl : 
     let res, t = ModelChecking.modelCheck config tslist hyperltl m
 
     config.LoggerN ""
-    
+
     if res then 
         printfn "SAT"
     else
@@ -66,7 +66,7 @@ let explictSystemVerification (config : Configuration) systemPaths propPath m  =
             | _ -> raise <| AnalysisException $"Could not open/read file %s{x}"
         )
 
-    config.LoggerN $"Read Input in: %i{sw.ElapsedMilliseconds}ms"
+    config.LoggerN $"Read input (%i{sw.ElapsedMilliseconds}ms)"
 
     sw.Restart()
 
@@ -80,9 +80,9 @@ let explictSystemVerification (config : Configuration) systemPaths propPath m  =
                 
                 
     if HyperLTL.isConsistent hyperltl |> not then
-        raise <| AnalysisException "HyperLTL formula is not consistent. Aborting." 
+        raise <| AnalysisException "HyperLTL formula is not consistent" 
 
-    let tslist = 
+    let tsList = 
         tscontent
         |> List.map (fun x -> 
             match TransitionSystemLib.TransitionSystem.Parser.parseTransitionSystem x with 
@@ -91,33 +91,50 @@ let explictSystemVerification (config : Configuration) systemPaths propPath m  =
                     raise <| AnalysisException $"The explicit-state system could not be parsed: %s{msg}"
         )
 
-    config.LoggerN $"Parsed Input in: %i{sw.ElapsedMilliseconds}ms"
-    
-    let tslist =
-        if tslist.Length > 1 then 
-            if tslist.Length <> hyperltl.QuantifierPrefix.Length then 
-                raise <| AnalysisException "The number of systems given does not match the property"
-            tslist
-        else  
-            List.init (hyperltl.QuantifierPrefix.Length) (fun _ -> tslist.[0])
-   
-    
-    tslist
+    config.LoggerN $"Parsed input (%i{sw.ElapsedMilliseconds}ms)"
+
+    // Check the systems 
+    tsList
     |> List.iteri (fun i ts ->
         match TransitionSystem.findError ts with 
         | None -> ()
         | Some msg -> 
             raise <| AnalysisException $"Found error in the %i{i}th system: %s{msg}"
         )
-            
+
+    config.LoggerN $"System sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)}"
+
+    let tsList = 
+        if config.ModelCheckingOptions.ComputeBisimulation then     
+            // Compute bisimulation quotient
+            sw.Restart()
+            let bisim = 
+                tsList
+                |> List.map (fun ts -> TransitionSystem.computeBisimulationQuotient ts |> fst)
+
+            config.LoggerN $"Computed bisimulation quotient (%i{sw.ElapsedMilliseconds}ms)"
+            config.LoggerN $"System sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)}"
+
+            bisim        
+        else 
+            tsList
+    
+    let tsList =
+        if tsList.Length > 1 then 
+            if tsList.Length <> hyperltl.QuantifierPrefix.Length then 
+                raise <| AnalysisException "The number of systems given does not match the property"
+            tsList
+        else  
+            List.init (hyperltl.QuantifierPrefix.Length) (fun _ -> tsList.[0])
+    
     hyperltl.LTLMatrix
     |> FsOmegaLib.LTL.LTL.allAtoms
     |> Set.iter (fun (x, i) ->
-            if List.contains x tslist.[i].APs |> not then
+            if List.contains x tsList.[i].APs |> not then
                 raise <| AnalysisException $"AP (%s{x}, %i{i}) is used in the HyperLTL formula, but AP %s{x} is not defined in the %i{i}th system"
             )
             
-    verify config tslist hyperltl m
+    verify config tsList hyperltl m
 
 let nuSMVSystemVerification (config: Configuration) systemPaths propPath m  = 
     let sw: System.Diagnostics.Stopwatch = System.Diagnostics.Stopwatch()
@@ -133,25 +150,25 @@ let nuSMVSystemVerification (config: Configuration) systemPaths propPath m  =
     let systemContents = 
         systemPaths 
         |> List.map (fun x -> 
-                try 
-                    File.ReadAllText  x
-                with 
-                    | _ -> 
-                        raise <| AnalysisException $"Could not open/read file %s{x}"
+            try 
+                File.ReadAllText  x
+            with 
+                | _ -> 
+                    raise <| AnalysisException $"Could not open/read file %s{x}"
             )
 
-    config.LoggerN $"Read Input in: %i{sw.ElapsedMilliseconds}ms"
+    config.LoggerN $"Read input (%i{sw.ElapsedMilliseconds}ms)"
 
     sw.Restart()
 
     let plist = 
         systemContents
-        |> List.map (fun s -> 
+        |> List.mapi (fun i s -> 
             match TransitionSystemLib.SymbolicSystem.Parser.parseSymbolicSystem s with 
-                | Result.Ok x -> x 
-                | Result.Error msg -> 
-                    raise <| AnalysisException $"The NuSMV system could not be parsed: %s{msg}"
-                    )
+            | Result.Ok x -> x 
+            | Result.Error msg -> 
+                raise <| AnalysisException $"The %i{i}th NuSMV system could not be parsed: %s{msg}"
+        )
 
     let symbolicHyperLTL = 
         match HyperLTL.Parser.parseNamedSymbolicHyperltl propContent with
@@ -160,8 +177,9 @@ let nuSMVSystemVerification (config: Configuration) systemPaths propPath m  =
         | Result.Error err -> 
             raise <| AnalysisException $"The HyperLTL formula could not be parsed. %s{err}"
 
-    config.LoggerN $"Parsed Input in: %i{sw.ElapsedMilliseconds}ms"
+    config.LoggerN $"Parsed input (%i{sw.ElapsedMilliseconds}m)s"
 
+    // Check for error in the NuSMV models
     plist 
     |> List.iteri (fun i x -> 
         match SymbolicSystem.findError x with 
@@ -170,8 +188,6 @@ let nuSMVSystemVerification (config: Configuration) systemPaths propPath m  =
             raise <| AnalysisException $"Found error in the %i{i}th system: %s{msg}"
         )
 
-    sw.Restart()
-    
     let unfoldRelationPredicate (a : RelationalAtom)  = 
         match a with 
         | UnaryPred (e, n) -> 
@@ -203,6 +219,8 @@ let nuSMVSystemVerification (config: Configuration) systemPaths propPath m  =
         
     if HyperLTL.isConsistent unfoldedHyperLTL |> not then
         raise <| AnalysisException "HyperLTL formula is not consistent"
+
+    sw.Restart()
     
     let tsList = 
         if plist.Length = 1 then 
@@ -252,9 +270,25 @@ let nuSMVSystemVerification (config: Configuration) systemPaths propPath m  =
                 SymbolicSystem.convertSymbolicSystemToTransitionSystem plist.[i] atomList
                 )
                  
-    config.LoggerN $"Compiled Program to explicit-state transition system in %i{sw.ElapsedMilliseconds}ms"
-    config.LoggerN $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)}"
-    config.LoggerN $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)} (t: %i{sw.ElapsedMilliseconds}ms)"
+    config.LoggerN $"Compiled programs to explicit-state TSs (%i{sw.ElapsedMilliseconds}ms)"
+    config.LoggerN $"System sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)}"
+
+
+    sw.Restart()
+    let tsList = 
+        if config.ModelCheckingOptions.ComputeBisimulation then     
+            // Compute bisimulation quotient
+            sw.Restart()
+            let bisim = 
+                tsList
+                |> List.map (fun ts -> TransitionSystem.computeBisimulationQuotient ts |> fst)
+
+            config.LoggerN $"Computed bisimulation quotient (%i{sw.ElapsedMilliseconds}ms)"
+            config.LoggerN $"System sizes: %A{bisim |> List.map (fun ts -> ts.States.Count)}"
+
+            bisim        
+        else 
+            tsList
 
     // Convert the APs in the system to be strings
     let tsList = 
@@ -294,7 +328,7 @@ let booleanProgramVerification (config: Configuration) systemPaths propPath m  =
                     raise <| AnalysisException $"Could not open/read file %s{x}"
             )
 
-    config.LoggerN $"Read Input in %i{sw.ElapsedMilliseconds}ms"
+    config.LoggerN $"Read input (%i{sw.ElapsedMilliseconds}ms)"
 
     sw.Restart()
 
@@ -310,14 +344,14 @@ let booleanProgramVerification (config: Configuration) systemPaths propPath m  =
 
     let progList = 
         progcontents
-        |> List.map (fun s -> 
+        |> List.mapi (fun i s -> 
             match TransitionSystemLib.BooleanProgramSystem.Parser.parseBooleanProgram s with 
                 | Ok x -> x
                 | Error msg -> 
-                    raise <| AnalysisException $"The boolean program could not be parsed: %s{msg}"
+                    raise <| AnalysisException $"The %i{i}th boolean program could not be parsed: %s{msg}"
             )
 
-    config.LoggerN $"Parsed Input in %i{sw.ElapsedMilliseconds}ms"
+    config.LoggerN $"Parsed input (%i{sw.ElapsedMilliseconds}ms)"
 
     progList
     |> List.iteri (fun i x -> 
@@ -375,13 +409,30 @@ let booleanProgramVerification (config: Configuration) systemPaths propPath m  =
                 |> TransitionSystem.mapAPs (fun (n, i) -> n + "_" + string(i))
             )
 
-    config.LoggerN $"Compiled Program to explicit-state TS in %i{sw.ElapsedMilliseconds}ms"
-    config.LoggerN $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)}"
-    config.LoggerN $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)} (t: %i{sw.ElapsedMilliseconds}ms)"
+    config.LoggerN $"Compiled Program to explicit-state TS (%i{sw.ElapsedMilliseconds}ms)"
+    config.LoggerN $"System sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)}"
+
+
+    sw.Restart()
+    let tsList = 
+        if config.ModelCheckingOptions.ComputeBisimulation then     
+            // Compute bisimulation quotient
+            sw.Restart()
+            let bisim = 
+                tsList
+                |> List.map (fun ts -> TransitionSystem.computeBisimulationQuotient ts |> fst)
+
+            config.LoggerN $"Computed bisimulation quotient (%i{sw.ElapsedMilliseconds}ms)"
+            config.LoggerN $"System sizes: %A{bisim |> List.map (fun ts -> ts.States.Count)}"
+
+            bisim        
+        else 
+            tsList
 
     let hyperltl = 
         {
             HyperLTL.QuantifierPrefix = hyperltl.QuantifierPrefix
             HyperLTL.LTLMatrix = hyperltl.LTLMatrix |> LTL.map (fun ((n, i), j) -> n + "_" + string(i), j)
         }
+
     verify config tsList hyperltl m

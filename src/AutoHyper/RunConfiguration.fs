@@ -41,11 +41,18 @@ type SolverConfiguration =
             RabitJarPath = Option.None
             ForkliftJarPath  = Option.None
         }
+
+
+type ModelCheckingOptions = 
+    {
+        ComputeBisimulation : bool
+    }
       
 /// A configuration summarizes the location to each solver and a printing function that is called for all non-fatal printouts
 type Configuration = 
     {
         SolverConfig : SolverConfiguration
+        ModelCheckingOptions: ModelCheckingOptions
         Logger : String -> unit
     }
 
