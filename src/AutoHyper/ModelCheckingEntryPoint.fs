@@ -34,12 +34,17 @@ open ModelChecking
 let private verify config (tslist : list<TransitionSystem<String>>) (hyperltl : HyperLTL<String>) (m : Mode) = 
     let res, t = ModelChecking.modelCheck config tslist hyperltl m
 
-    if res then 
-        printfn "SAT\n"
-    else
-        printfn "UNSAT\n"
+    config.LoggerN ""
     
-    config.LoggerN $"Model-checking time: %i{t.TotalTime}"
+    if res then 
+        printfn "SAT"
+    else
+        printfn "UNSAT"
+
+    // Add a fresh line
+    config.LoggerN ""
+    
+    config.LoggerN $"Model-checking time: %i{t.TotalTime}ms (~=%.2f{double(t.TotalTime) / 1000.0}s)"
 
 
 let explictSystemVerification (config : Configuration) systemPaths propPath m  = 

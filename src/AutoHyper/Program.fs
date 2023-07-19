@@ -108,7 +108,7 @@ let private run (args: array<string>) =
             nuSMVSystemVerification config systemPaths propPath mode
 
     swtotal.Stop()
-    config.LoggerN $"Time %i{swtotal.ElapsedMilliseconds}ms (~=%.2f{double(swtotal.ElapsedMilliseconds) / 1000.0}s)"
+    config.LoggerN $"Total time: %i{swtotal.ElapsedMilliseconds}ms (~=%.2f{double(swtotal.ElapsedMilliseconds) / 1000.0}s)"
 
     0
 
