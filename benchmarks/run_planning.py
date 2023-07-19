@@ -13,7 +13,7 @@ for l in lines:
     print("Property: " + sys)
     print("Size: " + prop)
 
-    args = ["--nusmv"] + a + ["-m", "incl_spot", "-v", "1"]
+    args = ["--nusmv"] + a + ["-m", "incl_spot"]
 
     startTime = time.time()
     result = subprocess.run(["../app/AutoHyper"] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
