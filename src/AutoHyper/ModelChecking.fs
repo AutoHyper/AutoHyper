@@ -124,7 +124,9 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
 
             match FsOmegaLib.Operations.AutomataChecks.isEmpty Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value aut with 
             | Success x -> not x 
-            | Fail err -> raise <| AnalysisException err 
+            | Fail err -> 
+                config.LoggerN err.DebugInfo // Log the detailled infos
+                raise <| AnalysisException err.Info
 
         swEmptiness.Stop()
         
@@ -139,7 +141,7 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
             | INCL x -> x 
             | _ -> raise <| AnalysisException "Should not happen"
         
-        config.Logger [THREE; FOUR] "Starting Inclusion Check..."
+        config.Logger "Starting Inclusion Check..."
         if isNegated then
             raise <| AnalysisException "Automaton is negated but should not be"
             
@@ -147,11 +149,13 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
         let res = 
             match inclusionTest config tslist aut inclusionChecker with 
             | Success x -> x 
-            | Fail err -> raise <| AnalysisException err 
+            | Fail err -> 
+                config.LoggerN err.DebugInfo
+                raise <| AnalysisException err.Info
             
         swInclusion.Stop()
 
-        config.Logger [THREE; FOUR] "Done \n"
+        config.LoggerN "Done"
 
         res
     else
@@ -168,7 +172,9 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
 
                     match FsOmegaLib.Operations.AutomataOperations.complementToNBA Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value LOW aut with 
                     | Success x -> x 
-                    | Fail err -> raise <| AnalysisException err 
+                    | Fail err -> 
+                        config.LoggerN err.DebugInfo
+                        raise <| AnalysisException err.Info
 
                 swComplement.Stop()
                 r
@@ -178,7 +184,7 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
         let projStartIndex = qf[0..qf.Length-2] |> List.sum 
         let projEndIndex = List.sum qf - 1
 
-        config.Logger [THREE; FOUR] "Starting Product Construction..."
+        config.Logger "Starting Product Construction..."
         swProduct.Start()
         let nextAut =  
             ProductConstruction.constructAutomatonSystemProduct  possiblyNegatedAut tslist[projStartIndex..projEndIndex] [projStartIndex..projEndIndex]
@@ -186,7 +192,7 @@ let rec private modelCheckComplementationRec (config : Configuration)  (tslist :
 
         swProduct.Stop()
 
-        config.Logger [THREE; FOUR] "Done\n"
+        config.LoggerN "Done"
 
         let isNegated = if lastQuantifierType = FORALL then true else false
 
@@ -205,7 +211,7 @@ let private modelCheckInit (config : Configuration)  (tslist : list<TransitionSy
         else 
             true
 
-    config.Logger [THREE; FOUR] "Starting LTL2NBA..."
+    config.Logger "Starting LTL2NBA..."
     swLTLtoNBA.Start()
     let currentNBA =
         let f =    
@@ -219,17 +225,19 @@ let private modelCheckInit (config : Configuration)  (tslist : list<TransitionSy
 
         match FsOmegaLib.Operations.LTLConversion.convertLTLtoNBA Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.Ltl2tgbaPath.Value f with 
         | Success aut -> aut 
-        | Fail err -> raise <| AnalysisException err
+        | Fail err -> 
+            config.LoggerN err.DebugInfo
+            raise <| AnalysisException err.Info
         
     swLTLtoNBA.Stop()
 
-    config.Logger [THREE; FOUR] "Done\n"
+    config.LoggerN "Done"
     
     modelCheckComplementationRec config tslist qfPrefix isNegated currentNBA m
     
 
 let private modelCheckAlternationFree (config : Configuration) (tslist : list<TransitionSystem<'L>>) (prop : HyperLTL<'L>) =  
-    config.Logger [THREE; FOUR] "Verify alternation free formula\n"
+    config.LoggerN "Verify alternation free formula"
     assert(extractBlocks prop.QuantifierPrefix |> List.length = 1)
 
     let shouldNegate = if prop.QuantifierPrefix.[0] = FORALL then true else false
@@ -247,7 +255,9 @@ let private modelCheckAlternationFree (config : Configuration) (tslist : list<Tr
     let nba = 
         match FsOmegaLib.Operations.LTLConversion.convertLTLtoNBA Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.Ltl2tgbaPath.Value matrix with 
         | Success aut -> aut 
-        | Fail err -> raise <| AnalysisException err
+        | Fail err -> 
+            config.LoggerN err.DebugInfo
+            raise <| AnalysisException err.Info
 
     swLTLtoNBA.Stop()
 
@@ -270,7 +280,9 @@ let private modelCheckAlternationFree (config : Configuration) (tslist : list<Tr
         let isNotEmpty = 
             match FsOmegaLib.Operations.AutomataChecks.isEmpty Util.DEBUG config.SolverConfig.MainPath config.SolverConfig.AutfiltPath.Value productAut with 
             | Success res -> not res 
-            | Fail err -> raise <| AnalysisException err
+            | Fail err -> 
+                config.LoggerN err.DebugInfo
+                raise <| AnalysisException err.Info
 
         swEmptiness.Stop()
 

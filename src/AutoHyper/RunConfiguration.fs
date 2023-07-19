@@ -41,17 +41,13 @@ type SolverConfiguration =
             RabitJarPath = Option.None
             ForkliftJarPath  = Option.None
         }
-        
-type VerbosityLevel = 
-    | ZERO
-    | ONE 
-    | TWO 
-    | THREE
-    | FOUR 
-
+      
 /// A configuration summarizes the location to each solver and a printing function that is called for all non-fatal printouts
 type Configuration = 
     {
         SolverConfig : SolverConfiguration
-        Logger : list<VerbosityLevel> -> String -> unit
+        Logger : String -> unit
     }
+
+    member this.LoggerN s = 
+        this.Logger (s + "\n")

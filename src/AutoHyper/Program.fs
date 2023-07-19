@@ -62,9 +62,9 @@ let private run (args: array<string>) =
             | _ -> 
                 raise <| AnalysisException "Could not open paths.json file"
 
-    let logger vb s = 
-        if List.contains cmdArgs.Verbosity vb then 
-            printf $"%s{s}" 
+    let logger s = 
+        if cmdArgs.DebugOutputs then 
+            printf $"%s{s}"             
     
     let solverConfig = CommandLineParser.parseConfigFile configContent
 
@@ -90,7 +90,7 @@ let private run (args: array<string>) =
     
     let config = 
         {
-            Configuration.SolverConfig = solverConfig;
+            Configuration.SolverConfig = solverConfig
             Logger = logger
         }
 
@@ -108,7 +108,7 @@ let private run (args: array<string>) =
             nuSMVSystemVerification config systemPaths propPath mode
 
     swtotal.Stop()
-    config.Logger [TWO; THREE; FOUR] $"Time %i{swtotal.ElapsedMilliseconds}ms (~=%.2f{double(swtotal.ElapsedMilliseconds) / 1000.0}s)\n"
+    config.LoggerN $"Time %i{swtotal.ElapsedMilliseconds}ms (~=%.2f{double(swtotal.ElapsedMilliseconds) / 1000.0}s)"
 
     0
 

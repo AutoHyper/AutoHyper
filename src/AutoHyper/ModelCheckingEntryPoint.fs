@@ -35,15 +35,11 @@ let private verify config (tslist : list<TransitionSystem<String>>) (hyperltl : 
     let res, t = ModelChecking.modelCheck config tslist hyperltl m
 
     if res then 
-        config.Logger [ZERO; ONE] (sprintf "SAT\n")
-
-        config.Logger [TWO; THREE; FOUR] $"=========================\nSAT\n=========================\n"
-        config.Logger [TWO; THREE; FOUR] $"Time: %i{t.TotalTime}\n"
+        printfn "SAT\n"
     else
-        config.Logger [ZERO; ONE] (sprintf "UNSAT\n")
-
-        config.Logger [TWO; THREE; FOUR] $"=========================\nUNSAT\n=========================\n"
-        config.Logger [TWO; THREE; FOUR] $"Time: %i{t.TotalTime}\n"
+        printfn "UNSAT\n"
+    
+    config.LoggerN $"Model-checking time: %i{t.TotalTime}"
 
 
 let explictSystemVerification (config : Configuration) systemPaths propPath m  = 
@@ -65,7 +61,7 @@ let explictSystemVerification (config : Configuration) systemPaths propPath m  =
             | _ -> raise <| AnalysisException $"Could not open/read file %s{x}"
         )
 
-    config.Logger [TWO; THREE; FOUR] $"Read Input in: %i{sw.ElapsedMilliseconds}ms\n"
+    config.LoggerN $"Read Input in: %i{sw.ElapsedMilliseconds}ms"
 
     sw.Restart()
 
@@ -90,7 +86,7 @@ let explictSystemVerification (config : Configuration) systemPaths propPath m  =
                     raise <| AnalysisException $"The explicit-state system could not be parsed: %s{msg}"
         )
 
-    config.Logger [TWO; THREE; FOUR] $"Parsed Input in: %i{sw.ElapsedMilliseconds}ms\n"
+    config.LoggerN $"Parsed Input in: %i{sw.ElapsedMilliseconds}ms"
     
     let tslist =
         if tslist.Length > 1 then 
@@ -118,7 +114,7 @@ let explictSystemVerification (config : Configuration) systemPaths propPath m  =
             
     verify config tslist hyperltl m
 
-let nuSMVSystemVerification config systemPaths propPath m  = 
+let nuSMVSystemVerification (config: Configuration) systemPaths propPath m  = 
     let sw: System.Diagnostics.Stopwatch = System.Diagnostics.Stopwatch()
     sw.Start()
 
@@ -139,7 +135,7 @@ let nuSMVSystemVerification config systemPaths propPath m  =
                         raise <| AnalysisException $"Could not open/read file %s{x}"
             )
 
-    config.Logger [TWO; THREE; FOUR] $"Read Input in: %i{sw.ElapsedMilliseconds}ms\n"
+    config.LoggerN $"Read Input in: %i{sw.ElapsedMilliseconds}ms"
 
     sw.Restart()
 
@@ -159,7 +155,7 @@ let nuSMVSystemVerification config systemPaths propPath m  =
         | Result.Error err -> 
             raise <| AnalysisException $"The HyperLTL formula could not be parsed. %s{err}"
 
-    config.Logger [TWO; THREE; FOUR] $"Parsed Input in: %i{sw.ElapsedMilliseconds}ms\n"
+    config.LoggerN $"Parsed Input in: %i{sw.ElapsedMilliseconds}ms"
 
     plist 
     |> List.iteri (fun i x -> 
@@ -251,9 +247,9 @@ let nuSMVSystemVerification config systemPaths propPath m  =
                 SymbolicSystem.convertSymbolicSystemToTransitionSystem plist.[i] atomList
                 )
                  
-    config.Logger [TWO; THREE; FOUR] $"Compiled Program to explicit-state transition system in %i{sw.ElapsedMilliseconds}ms\n"
-    config.Logger [TWO; THREE; FOUR] $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)}\n"
-    config.Logger [ONE] $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)} (t: %i{sw.ElapsedMilliseconds}ms)\n"
+    config.LoggerN $"Compiled Program to explicit-state transition system in %i{sw.ElapsedMilliseconds}ms"
+    config.LoggerN $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)}"
+    config.LoggerN $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)} (t: %i{sw.ElapsedMilliseconds}ms)"
 
     // Convert the APs in the system to be strings
     let tsList = 
@@ -270,7 +266,7 @@ let nuSMVSystemVerification config systemPaths propPath m  =
     verify config tsList hyperltl m
 
 
-let booleanProgramVerification config systemPaths propPath m  = 
+let booleanProgramVerification (config: Configuration) systemPaths propPath m  = 
     let sw = System.Diagnostics.Stopwatch()
     let totalsw = System.Diagnostics.Stopwatch()
     totalsw.Start()
@@ -293,7 +289,7 @@ let booleanProgramVerification config systemPaths propPath m  =
                     raise <| AnalysisException $"Could not open/read file %s{x}"
             )
 
-    config.Logger [TWO; THREE; FOUR] $"Read Input in %i{sw.ElapsedMilliseconds}ms\n"
+    config.LoggerN $"Read Input in %i{sw.ElapsedMilliseconds}ms"
 
     sw.Restart()
 
@@ -316,7 +312,7 @@ let booleanProgramVerification config systemPaths propPath m  =
                     raise <| AnalysisException $"The boolean program could not be parsed: %s{msg}"
             )
 
-    config.Logger [TWO; THREE; FOUR] $"Parsed Input in %i{sw.ElapsedMilliseconds}ms\n"
+    config.LoggerN $"Parsed Input in %i{sw.ElapsedMilliseconds}ms"
 
     progList
     |> List.iteri (fun i x -> 
@@ -374,9 +370,9 @@ let booleanProgramVerification config systemPaths propPath m  =
                 |> TransitionSystem.mapAPs (fun (n, i) -> n + "_" + string(i))
             )
 
-    config.Logger [TWO; THREE; FOUR] $"Compiled Program to explicit-state TS in %i{sw.ElapsedMilliseconds}ms\n"
-    config.Logger [TWO; THREE; FOUR] $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)}\n"
-    config.Logger [ONE] $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)} (t: %i{sw.ElapsedMilliseconds}ms)\n"
+    config.LoggerN $"Compiled Program to explicit-state TS in %i{sw.ElapsedMilliseconds}ms"
+    config.LoggerN $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)}"
+    config.LoggerN $"System Sizes: %A{tsList |> List.map (fun ts -> ts.States.Count)} (t: %i{sw.ElapsedMilliseconds}ms)"
 
     let hyperltl = 
         {

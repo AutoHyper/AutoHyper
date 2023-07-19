@@ -24,6 +24,8 @@ open ModelChecking
 
 open JSON
 
+let VERSION = "1.1"
+
 type ExecutionMode = 
     | ExplictSystem of list<String> * String
     | BooleanProgram of list<String> * String
@@ -33,14 +35,14 @@ type CommandLineArguments =
     {
         ExecMode : option<ExecutionMode>
         Mode : option<ModelChecking.Mode>
-        Verbosity : RunConfiguration.VerbosityLevel
+        DebugOutputs : bool
     }
 
     static member Default = 
         {
             ExecMode = None
             Mode = Option.None
-            Verbosity = ZERO
+            DebugOutputs = false
         }
 
 let parseConfigFile (s : string) =
@@ -125,22 +127,10 @@ let parseCommandLineArguments (args : list<String>) =
                                         | "incl_forklift" -> parseArgumentsRec ys { opt with Mode = Some (INCL FORKLIFT) }
                                         | _ -> Result.Error ("Unsupported Mode: " + y)
                                 with _ -> Result.Error ("Unsupported Mode: " + y)
-                    | "-v" -> 
-                        match xs with 
-                            | [] -> 
-                                Result.Error "Option -v must be followed by an argument" 
-                            | y::ys -> 
-                                match y with 
-                                    | "0" -> parseArgumentsRec ys { opt with Verbosity = ZERO }
-                                    | "1" -> parseArgumentsRec ys { opt with Verbosity = ONE }
-                                    | "2" -> parseArgumentsRec ys { opt with Verbosity = TWO }
-                                    | "3" -> parseArgumentsRec ys { opt with Verbosity = THREE }
-                                    | "4" -> parseArgumentsRec ys { opt with Verbosity = FOUR }
-                                    | _ -> Result.Error ("Unsupported Verbosity Level: " + y)
-
-                        
+                    | "--debug" -> 
+                        parseArgumentsRec xs { opt with DebugOutputs = true}
                     | "-h" | "--help" | "-help" -> 
-                        printfn "AutoHyper (Version 1.0)"
+                        printfn $"AutoHyper (Version %s{VERSION})"
                         printfn ""
                         printfn "Copyright (C) 2022-2023 Raven Beutner"
                         printfn "This program comes with ABSOLUTELY NO WARRANTY."
@@ -149,9 +139,9 @@ let parseCommandLineArguments (args : list<String>) =
                         printfn ""
                         printfn "You have the following options: "
                         printfn ""
-                        printfn "  -e               verify a HyperLTL property on an explicit-state system"
-                        printfn "  -nusmv           verify a HyperLTL property on an NuSMV system"
-                        printfn "  -bp              verify a HyperLTL property on an boolean program"
+                        printfn "  --exp             verify a HyperLTL property on an explicit-state system"
+                        printfn "  --nusmv           verify a HyperLTL property on an NuSMV system"
+                        printfn "  --bp              verify a HyperLTL property on an boolean program"
                         printfn ""
                         printfn "  All of the above options are used in the form '(-e | -nusmv | -bp) <systemFile(s)> <propFile>'"
                         printfn "  where <systemFile(s)> is a (list of) files to systems and <propFile> the file containing the specification."
@@ -160,8 +150,7 @@ let parseCommandLineArguments (args : list<String>) =
                         printfn "  -m               specifies the mode to be used by AutoHyper. Options are 'comp', 'incl_spot', 'incl_rabit', 'incl_bait', 'incl_forklift'. "
                         printfn "                   If left unspecified AutoHyper uses incl_spot. "
                         printfn ""
-                        printfn "  -v               specifies the verbosity to be used by AutoHyper. Options are '0', '1', '2', '3', '4'."
-                        printfn "                   If left unspecified AutoHyper uses 0. "
+                        printfn "  --debug          if set, AutoHyper outputs additional infos and more"
                         printfn ""
                         printfn "  --version        prints the current version of AutoHyper."
                         printfn ""
@@ -172,12 +161,12 @@ let parseCommandLineArguments (args : list<String>) =
                         exit 0
 
                     | "--version"  -> 
-                        printfn "AutoHyper (Version 1.0)"
+                        printfn $"AutoHyper (Version %s{VERSION})"
 
                         exit 0
 
                     | "--license"  -> 
-                        printfn "AutoHyper (Version 1.0)"
+                        printfn $"AutoHyper (Version %s{VERSION})"
                         printfn ""
                         printfn "This program is free software: you can redistribute it and/or modify"
                         printfn "it under the terms of the GNU General Public License as published by"

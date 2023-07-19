@@ -148,7 +148,7 @@ module ExplicitNBA =
 
 module AutomataChecks = 
 
-    exception private AutomatonCheckException of String
+    exception private AutomatonCheckException of FsOmegaLibError
 
     let checkNBAContainmentBait debug mainPath baitPath (enba1 : ExplicitNBA<int, 'L>) (enba2 : ExplicitNBA<int, 'L>)  = 
         try 
@@ -178,19 +178,19 @@ module AutomataChecks =
                 elif c.Contains "Inclusion holds: false" then 
                     FsOmegaLib.Operations.AutomataOperationResult.Success false
                 else 
-                    FsOmegaLib.Operations.AutomataOperationResult.Fail ("Unexpected Output by BAIT: " + c)
+                    FsOmegaLib.Operations.AutomataOperationResult.Fail {Info = $"Error by BAIT"; DebugInfo = $"Unexpected output by BAIT; (containment); %s{c}"}
             | {ExitCode = exitCode; Stderr = stderr}  -> 
                 if exitCode <> 0 && exitCode <> 1 then 
-                    raise <| AutomatonCheckException $"Unexpected exit code by BAIT: %i{exitCode}"
+                    raise <| AutomatonCheckException {Info = $"Unexpected exit code by BAIT"; DebugInfo = $"Unexpected exit code by BAIT; (containsment); %i{exitCode}"}
                 else   
-                    raise <| AutomatonCheckException $"Error by BAIT: %s{stderr}"
+                    raise <| AutomatonCheckException {Info = $"Error by BAIT"; DebugInfo = $"Error by BAIT; (containment); %s{stderr}"}
 
         with 
         | _ when debug -> reraise() 
         | AutomatonCheckException err -> 
             Fail (err)
         | e -> 
-            Fail $"%s{e.Message}"
+            Fail {Info = $"Unexpected error"; DebugInfo = $"Unexpected error; (BAIT, containment); %s{e.Message}"}
 
     let checkNBAContainmentRabit (debug: bool) mainPath rabitPath (enba1 : ExplicitNBA<'T, 'L>) (enba2 : ExplicitNBA<'T, 'L>)  = 
         try
@@ -221,19 +221,19 @@ module AutomataChecks =
                 elif c.Contains "Included." then 
                     FsOmegaLib.Operations.AutomataOperationResult.Success true
                 else 
-                    FsOmegaLib.Operations.AutomataOperationResult.Fail ("Unexpected Output by RABIT: " + c)
+                    FsOmegaLib.Operations.AutomataOperationResult.Fail {Info = $"Error by RABIT"; DebugInfo = $"Unexpected output by RABIT; (containment); %s{c}"}
             | {ExitCode = exitCode; Stderr = stderr}  -> 
                 if exitCode <> 0 && exitCode <> 1 then 
-                    raise <| AutomatonCheckException $"Unexpected exit code by RABIT: %i{exitCode}"
+                    raise <| AutomatonCheckException {Info = $"Unexpected exit code by RABIT"; DebugInfo = $"Unexpected exit code by RABIT;  (containsment); %i{exitCode}"}
                 else   
-                    raise <| AutomatonCheckException $"Error by RABIT: %s{stderr}"
+                    raise <| AutomatonCheckException {Info = $"Error by RABIT"; DebugInfo = $"Error by RABIT; (containment); %s{stderr}"}
 
         with 
         | _ when debug -> reraise() 
         | AutomatonCheckException err -> 
             Fail (err)
         | e -> 
-            Fail $"%s{e.Message}"
+            Fail {Info = $"Unexpected error"; DebugInfo = $"Unexpected error; (RABIT, containment); %s{e.Message}"}
 
     let checkNBAContainmentForklift debug mainPath forkliftPath (enba1 : ExplicitNBA<'T, 'L>) (enba2 : ExplicitNBA<'T, 'L>)  = 
         try 
@@ -263,16 +263,16 @@ module AutomataChecks =
                 elif c.Contains "OUTPUT:true" then 
                     FsOmegaLib.Operations.AutomataOperationResult.Success true
                 else 
-                    FsOmegaLib.Operations.AutomataOperationResult.Fail ("Unexpected Output by FORKLIFT: " + c)
+                    FsOmegaLib.Operations.AutomataOperationResult.Fail {Info = $"Error by FORKLIFT"; DebugInfo = $"Unexpected output by FORKLIFT; (containment); %s{c}"}
             | {ExitCode = exitCode; Stderr = stderr}  -> 
                 if exitCode <> 0 && exitCode <> 1 then 
-                    raise <| AutomatonCheckException $"Unexpected exit code by FORKLIFT: %i{exitCode}"
+                    raise <| AutomatonCheckException {Info = $"Unexpected exit code by FORKLIFT"; DebugInfo = $"Unexpected exit code by FORKLIFT;  (containsment); %i{exitCode}"}
                 else   
-                    raise <| AutomatonCheckException $"Error by FORKLIFT: %s{stderr}"
+                    raise <| AutomatonCheckException {Info = $"Error by FORKLIFT"; DebugInfo = $"Error by FORKLIFT; (containment); %s{stderr}"}
    
         with 
         | _ when debug -> reraise() 
         | AutomatonCheckException err -> 
             Fail (err)
         | e -> 
-            Fail $"%s{e.Message}"
+            Fail {Info = $"Unexpected error"; DebugInfo = $"Unexpected error; (FORKLIFT, containment); %s{e.Message}"}
