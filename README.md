@@ -12,20 +12,28 @@ git submodule init
 git submodule update
 ```
 
+When pulling a new version, make sure to update the submodules by re-running `git submodule update`.
+
 ## Overview
 
 AutoHyper reads a transition system and a [HyperLTL](https://doi.org/10.1007/978-3-642-54792-8_15) property and determines if the property holds on the given system.
 The system can either be provided as an explicit-state system or a symbolic system that is internally converted to an explicit-state representation.
-Support for symbolic systems includes a fragment of the [NuSMV specification language](https://nusmv.fbk.eu/NuSMV/userman/v26/nusmv.pdf) and programs in a simple boolean programming language [2].
+Support for symbolic systems includes a fragment of the [NuSMV specification language](https://nusmv.fbk.eu/NuSMV/userman/v26/nusmv.pdf) and programs in a simple boolean programming language [2, 4].
 You can read the details in our paper:
 
 > AutoHyper: Explicit-State Model Checking for HyperLTL. Raven Beutner and Bernd Finkbeiner. TACAS 2023. [1]
 
 
+If you want to model-check more expressive HyperQPTL properties, take a look at the [AutoHyperQ](https://github.com/AutoHyper/AutoHyperQ) tool.
+AutoHyperQ also includes additional features such as witness/counterexample computation. 
+See [5] for details.
+
+
+
 ## Structure 
 
-- `src/` contains the source code of AutoHyper and the tool used to produce the plots in the paper (both written in F#).
-- `benchmarks/` contains various HyperLTL benchmarks.
+- `src/` contains the source code of AutoHyper (written in F#).
+- `benchmarks/` contains various HyperLTL benchmarks and scripts to run them automatically. Most benchmarks were created by [3] for the bounded model checker [HyperQB](https://github.com/HyperQB/HyperQB) and simply adopted to the syntax supported by AutoHyper. See `benchmarks/BenchmarkDetails.md` for more information.
 - `app/` is the target folder for the build. The final AutoHyper executable will be placed here. 
 
 ## Build AutoHyper
@@ -35,7 +43,7 @@ You can read the details in our paper:
 We require the following dependencies:
 
 - [.NET 7 SDK](https://dotnet.microsoft.com/en-us/download) (tested with version 7.0.302)
-- [spot](https://spot.lrde.epita.fr/)
+- [spot](https://spot.lrde.epita.fr/) (tested with version 2.11.5)
 
 Install the .NET 7 SDK (see [here](https://dotnet.microsoft.com/en-us/download) for details) and make sure it is installed correctly by running `dotnet --version`.
 Download and build spot (details can be found [here](https://spot.lrde.epita.fr/)). 
@@ -63,7 +71,7 @@ app/AutoHyper --version
 
 ### Connect spot to AutoHyper
 
-AutoHyper requires the *autfilt* and *ltl2tgba* tools from the spot library.
+AutoHyper requires the *autfilt* and *ltl2tgba* tools from the [spot](https://spot.lrde.epita.fr/) library.
 AutoHyper is designed such that it only needs the **absolute** path to these executables, so they can be installed and placed at whatever locations fits best.
 The absolute paths are specified in a `paths.json` configuration file. 
 This file must be located in the same directory as the AutoHyper executable (this convention makes it easy to find the config file, independent of the relative path AutoHyper is called from). 
@@ -116,7 +124,7 @@ You can run AutoHyper by running `app/AutoHyper <args>` where `<args>` are the c
 
 AutoHyper supports different input modes:
 - Explicit-state systems
-- (a fragment of) NuSMV models 
+- NuSMV models 
 - Boolean programs
 
 We give details on the command line options and the input format for each input mode in Section [Input for AutoHyper](#input-for-autohyper). 
@@ -136,7 +144,7 @@ Depending on which type of system you want to check (either explicit-state syste
 
 In all the above options, `<systemPath(s)>` is either a single path to the system or multiple such paths. 
 `<propPath>` is the path to the property.
-In case  `<systemPath(s)>` is only a single path, we use the system at this path to resolve all quantifiers. In case `<systemPath(s)>` are multiple paths, their number must match the quantifier prefix in the HyperLTL property (specified via `<propPath>`).
+In case `<systemPath(s)>` is only a single path, we use the system at this path to resolve all quantifiers. In case `<systemPath(s)>` are multiple paths, their number must match the quantifier prefix in the HyperLTL property (specified via `<propPath>`).
 If, for example, the prefix has two quantifiers, you can call `--exp ts1 ts2 prop` where `ts1` and `ts2` are (paths to) explicit-state systems and `prop` contains a HyperLTL property with two quantifiers.
 If you run `--exp ts1 prop` both quantifiers are resolved on `ts1`.
 Exactly one of the above command line options (i.e., `--exp`, `--nusmv`, or `--bp`) must be used.
@@ -152,10 +160,7 @@ Additional (and optional) command-line options include
     - `incl_bait` uses BAIT's inclusion check (requires a working copy of bait, see Section [])
     - `incl_forklift` uses FORKLIFT's inclusion check (requires a working copy of forklift, see Section [])
     If not set, AutoHyper uses `incl_spot` as default.
-- `-v` sets the verbosity. Available options are `0`, `1`, `2`, `3`, `4`.
-    If set to `0` only the result (`SAT`, `UNSAT`) and potential error messages are printed. 
-    The higher the verbosity, the more information is printed. 
-    The default level is set to `0`.
+- `--debug` instructs AutoHyper to print additional information and more detailed error messages.
 - `--version` displays the AutoHyper version.
 - `--license` displays information about the license of AutoHyper.
 - `--help` displays a help message.
@@ -184,7 +189,7 @@ Here `<ltlBody>` can be one of the following:
 - `X <ltlBody>`: Next
 - `! <ltlBody>`: Boolean Negation
 
-The operators follow the usual operator precedences. To avoid ambiguity, we recommend always placing parenthesis around each construct. 
+The operators follow the usual operator precedences. To avoid ambiguity, we recommend always using parenthesis. 
 
 The quantifier prefix `<qfPrefix>` can be one of the following:
 - The empty string
@@ -263,7 +268,7 @@ forall A. exists B. X (G ("x"_A <-> "y"_B))
 When using option `--nusmv`, AutoHyper expects a *NuSMV system* with finite variable domains (so the system denotes a finite-state transition system).
 AutoHyper supports only a fragment of the NuSMV specification language.
 In particular, we assume that the system consists of a *single module*. 
-In Section [Convert To Single Module System](#convert-to-single-module-system) we give details on how to automatically convert a system into a single-module system. 
+In section [Convert To Single Module System](#convert-to-single-module-system) we give details on how to automatically convert a system into a single-module system. 
 
 
 A single-module NuSMV model (as supported by AutoHyper) has the following structure:
@@ -289,24 +294,37 @@ VAR
 <varName> : <type>;
 ```
 
-and contains a sequence of type assignments. 
+containing a sequence of type assignments. 
 Here `<varName>` is a variable name.
 A valid variable name is any sequence of characters that starts with a letter or `_`, followed by an arbitrary sequence of letters, digits, or the special symbols `_`, `$`, `#`, `-`, `[`, `]`, `.` and is no reserved keyword.
 
 `<type>` gives the type of that variable. 
 Support types are:
-- `boolean`: The boolean type with allowed values `TRUE` and `FALSE`
-- `{n_1, ..., n_M}` where `n_1`, ..., `n_m` are integers: This is a set type that can hold any natural number contained in the set
+- `boolean`: The boolean type with allowed values `TRUE` and `FALSE`.
+- `{n_1, ..., n_M}` where `n_1`, ..., `n_m` are integers: This is a set type that can hold any natural number contained in the set.
 - `l..h` where `l <= h` are integer: This range type can hold any integer between `l` and `h`. Internally, we treat it as a shorthand for `{l, l+1, ..., h-1, h}`.
-- `array l..h of <type>` where `l <= h` are integer and `<type>` is an arbitrary (recursively defined) type: This array type models an array with valid indices for all inetger between `l` and `h`. Internally, we eliminate arrays and instead introduce a separate variable for each position. For example, the type declaration `x : array 0..2 of boolean;` will be reduced to the type declarations `x[0] : boolean; x[1] : boolean; x[2] : boolean;`.
-
-
+- `array l..h of <type>` where `l <= h` are integer and `<type>` is an arbitrary (recursively defined) type: This array type models an array with valid indices for all integers between `l` and `h`. Internally, we eliminate arrays and instead introduce a separate variable for each position. For example, the type declaration `x : array 0..2 of boolean;` will be reduced to the type declarations `x[0] : boolean; x[1] : boolean; x[2] : boolean;`.
 
 
 #### Assignments and Definitions
 
-The `<bodyBlock>` defines the actual behavior of the system. In it, we can pose initial conditions on all variables, describe how the variables should be updated and introduce additional (defined) shorthands. 
-The `<bodyBlock>` is a sequence of assignment blocks and definition blocks, i.e., `<bodyBlock> = (<assignmentBlock> + <definitionBlock>)^*` where `<assignmentBlock>` and `<definitionBlock>` are defined in the following. 
+The `<bodyBlock>` defines the actual behavior of the system. In this block, we can pose initial conditions on all variables, describe how the variables should be updated in each step, and introduce additional (defined) shorthands. 
+The `<bodyBlock>` is a sequence of assignment blocks and definition blocks, i.e., it has the form
+
+```
+<assignmentBlock>
+...
+<assignmentBlock>
+<definitionBlock>
+...
+<definitionBlock>
+<assignmentBlock>
+...
+<assignmentBlock>
+...
+```
+
+where `<assignmentBlock>` and `<definitionBlock>` are defined in the following. 
 
 ##### Assignment Block
 
@@ -329,17 +347,17 @@ or
 ```
 next(<varName>) := <expression>;
 ```
-where `<varName>` is the name of a variable (the variable must be defined in the type declaration section) and <expression>` is a NuSMV expression (formally defined below).
+where `<varName>` is the name of a variable (the variable must be defined in the type declaration section) and `<expression>` is a NuSMV expression (formally defined below).
 In the former case, we define all possible initial values for `<varName>`. 
 The expression evaluates to a set of values (in the special case, where the expression is deterministic, it evaluates to a singleton set giving the precise value) and all such values are initial states of the system. 
-The expression can refer to other variables, i.e., we allow initial conditions such as `init(x) := y;`, but there can be no cyclic dependency when evaluating the initial expressions. 
+The expression can refer to other variables, i.e., we allow initial conditions such as `init(x) := y;`, but there can be no *cyclic dependency* when evaluating the initial expressions. 
 
-In the latter case, we define all successor values for the variable in one step during the evaluation. 
+In the latter case, a next expression defines all successor values for the variable.
 In each step, we evaluate the expression in the current state and assign the resulting value to `<varName>` in the next state.
 As before, the expression evaluates to a set of values (in the deterministic case a singleton set) and we consider all possible values in the next step.
 
-In either of the two cases, the expression can refer to program variables (those defined in the type declaration section) and also *defined* words (defined below).
-We always forbid cyclic dependencies of the variables.  
+In either of the two cases, the expression can refer to program variables (those defined in the type declaration section) and also *defined* variables (defined below).
+There must not exist cyclic dependencies between the defined variables when evaluating the initial or next expression. 
 
 
 ##### Definition Block
@@ -354,29 +372,30 @@ DEFINE
 <definition>
 ```
 
-Each `<definition>` has the form
+where `<definition>` has the form
 ```
 <varName> := <expression>;
 ```
-Here `<varName>` is a variable name that is *not* listed in the `<varTypeBlock>` which we define a shorthand.
-As in the assignment block, we forbid cylic depecies during the evlauation of definitions.
+Here `<varName>` is a variable name that is *not* listed in the `<variableDeclarationBlock>`.
+Intuitively, `<varName> := <expression>;` defines the variable `<varName>` as a shorthand for the expression `<expression>`.
+As in the assignment block, we forbid cylic dependecies during the evaluation of definitions.
 
 #### Expressions
 
-An expression is evaluated in a state `s` (a concrete assignment of all declared variables to values) and yields a set (possibly a singleton set) of values.
+An expression is evaluated in a state `s`, i.e., a concrete mapping that maps each declared variable (defined in `<variableDeclarationBlock>`) to a value.
+When evaluating an expression in state `s`, we compute a *set* of values (possibly a singleton set in case the expression is determinstic).
 An `<expression>` can have the following forms:
 
 - `TRUE`: the boolean true constant; evaluates to singelton set `{TRUE}`
 - `FALSE`: the boolean false constant; evaluates to singelton set `{TRUE}`
 - `<n>` where `<n>` is any integer: an integer constant; evaluates to singelton set `{<n>}`
-- `<varName>`: a variable that is either declared in the `VAR` block or defined in a `DEFINE` block. In case `<varName>` is declared, it evaluates to `{s(<varName>)}`, i.e., the singleton set containing value of `<varName>` in the current state. In case `<varName>` is defined, we (recursively) evaluate the defined expression in state `s`.
+- `<varName>`: a variable that is either declared in the `VAR` block or defined in a `DEFINE` block. In case `<varName>` is declared, it evaluates to `{s(<varName>)}`, i.e., the singleton set containing value of `<varName>` in the current state. In case `<varName>` is defined in a DEFINE block, we (recursively) evaluate the defined expression in state `s`.
 - `toInt(<expression>)`: converts a boolean value to an integer; we first (recursively) evaluate the subexpression and map all `TRUE`s to `0`s and all `FALSE`s to `1`s.
 - `toBool(<expression>)`: converts a integer value to a boolean; we first (recursively) evaluate the subexpression and map all `0`s to `FALSE`s and all other values to `TRUE`s.
 - `case <expression>:<expression>; ... <expression>:<expression>; esac`: a case expression; During the evaluation, we search for the first `<expression>:<expression>` pair where the first expression (the guard) evaluates to true and then compute the value of the second expression in that pair.
 - `{ <expression>, ..., <expression>}`: a set expression; We (recursively) evaluate all subexpressions and take the union of all sets
 - `<expression> <opp> <expression>`: Binary operation. Here `<opp>` can be: `&` (and), `|` (or), `->` (implies), `=` (equals), `!=` (not equals), `<=` (less or equal), `>=` (greater or equal), `<` (less), `>` (greater), `+` (addition), `-` (subtraction). We (recursively) evaluate both operants and apply each binary operation to all possible value combinations. 
 - `<opp> <expression>`: Unary operation. Here `<opp>` can be: `!` (boolean negation). We (recursively) evaluate the operant and apply each unary operation to all possible values. 
-
 
 
 #### Example 
@@ -433,7 +452,7 @@ Either they have the form
 ```
 {<expression>}_<VAR>
 ```
-where `<expression>` is an expression of type bool and `<VAR>` is a trace variable.
+where `<expression>` is an expression of type boolean and `<VAR>` is a trace variable.
 This atomic proposition holds whenever `<expression>` evaluated in the current step of the trace bound to `<VAR>` evaluates to `{TRUE}`. 
 
 
@@ -463,9 +482,9 @@ For further examples, take a look at the `benchmarks/symbolic` and `benchmarks/p
 #### Convert To Single Module System 
 
 The syntax supported by AutoHyper (and outlined above) does not include all NuSMV systems. 
-Most importantly, we only support systems that consits of a **single module**.
+Most importantly, we only support systems that consist of a **single module**.
 Fortunately, the [NuSMV toolchain](https://nusmv.fbk.eu/) provides a function to flatten a system (called `flatten_hierarchy`), i.e., convert an arbitrary NuSMV model to one that consists of a single module. 
-The result of this flatting does, in most cases, yield a specification that is supported by AutoHyper. 
+The result of this flatting does, in most cases, yield a NuSMV system that is supported by AutoHyper. 
 
 To use this, install the [NuSMV toolchain](https://nusmv.fbk.eu/) (tested with version 2.6.0). 
 For the easiest use, we recommend using the tool in *scripting* model.
@@ -490,7 +509,7 @@ Here `<...>/NuSMV` is the path to the NuSMV tool.
 ##### Python Script
 
 We provide a python script (`convertNuSMV.py`) that automates this process as much as possible. 
-First, **modify** the `convertNuSMV.py` script by inserting the absolute path to the NuSMV tool.
+First, **modify** the `convertNuSMV.py` script by inserting the absolute path to the `NuSMV` executable of the NuSMV tool.
 Afterward, you can call 
 
 ```
@@ -554,7 +573,7 @@ Statements (`<statement>`) have the form
 - `if * {<statement>} else {<statement>}`: Nondeterministic branching.
 
 Initially, all variables are assigned the constant `f` vector (of the length specified in the domain in the first line).
-For details on the semantics see [2].
+For details on the semantics see [2] and [4].
 
 #### Example
 
@@ -594,6 +613,12 @@ For further examples, take a look at the `benchmarks/bp` folder.
 
 ## References  
 
-[1] AutoHyper: Explicit-State Model Checking for HyperLTL. Raven Beutner and Bernd Finkbeiner. TACAS 2023. 
+[1] AutoHyper: Explicit-State Model Checking for HyperLTL. Raven Beutner and Bernd Finkbeiner. TACAS 2023
 
-[2] A Temporal Logic for Strategic Hyperproperties. Raven Beutner and Bernd Finkbeiner. CONCUR 2023.
+[2] A Temporal Logic for Strategic Hyperproperties. Raven Beutner and Bernd Finkbeiner. CONCUR 2021
+
+[3] Bounded Model Checking for Hyperproperties. Tzu-Han Hsu, César Sánchez, and Borzoo Bonakdarpour. TACAS 2021
+
+[4] HyperATL*: A Logic for Hyperproperties in Multi-Agent Systems. Raven Beutner and Bernd Finkbeiner. LMCS
+
+[5] Model Checking Omega-Regular Hyperproperties with AutoHyperQ. Raven Beutner and Bernd Finkbeiner. LPAR 2023
